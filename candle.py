@@ -1,6 +1,14 @@
 class CandleManager(object):
+    """
+    Groups price data into time-chunks (candles) based on period_seconds.
+    """
 
     def __init__(self, symbol, exchange, period_seconds):
+        """
+        :param symbol: COIN/BASE symbol for the market.
+        :param exchange: ccxt exchange object id
+        :param period_seconds: the candlestick period in seconds
+        """
         self.symbol = symbol
         self.exchange = exchange
         self.period_seconds = period_seconds
@@ -10,6 +18,13 @@ class CandleManager(object):
         self.callbacks = dict()
 
     def tick(self, timestamp_seconds, price):
+        """
+        Updates the CandleManager with new price info.
+
+        :param timestamp_seconds: the timestamp of the price data
+        :param price: the price
+        :return:
+        """
         time_round = int(timestamp_seconds / self.period_seconds) * self.period_seconds
 
         if not self.curr_candle:
@@ -36,7 +51,16 @@ class CandleManager(object):
 
 
 class Candle(object):
+    """
+    Represents a Candle. Tracks key points during a candle's lifetime.
+    """
     def __init__(self, symbol, exchange, time, start_price):
+        """
+        :param symbol:  COIN/BASE symbol for the market.
+        :param exchange: ccxt exchange object id
+        :param time: the interval period for the candle
+        :param start_price: the inital price of the candle
+        """
         self.symbol = symbol
         self.exchange = exchange
         self.time = time

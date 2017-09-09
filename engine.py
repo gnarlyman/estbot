@@ -11,8 +11,17 @@ logger = logging.getLogger(__name__)
 
 
 class BaseEngine(object):
+    """
+    This class should be sub-classed by a strategy, where candle functions
+    maybe implemented, and strategies created.
+    """
 
     def __init__(self, symbol, exchange, period_seconds=300):
+        """
+        :param symbol: COIN/BASE symbol for the market.
+        :param exchange: ccxt exchange object id
+        :param period_seconds: the candlestick period in seconds
+        """
         self.session = setup_db()
         self.symbol = symbol
         self.exchange = exchange
@@ -21,6 +30,14 @@ class BaseEngine(object):
         self.backfill = True
 
     async def run(self, interval=1, history_count=10000):
+        """
+        Main loop for candle generation and event handling
+
+        :param interval: frequency to poll database
+        :param history_count: number of historical Price objects
+                to pull from the database
+        :return:
+        """
         self.cm = self.get_candle_manager()
         for price in self.session.query(Price) \
                 .filter(Price.symbol == self.symbol) \
