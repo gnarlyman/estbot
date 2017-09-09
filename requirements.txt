@@ -1,0 +1,5 @@
+ccxt
+TA-Lib
+sqlalchemy
+psycopg2
+numpy
