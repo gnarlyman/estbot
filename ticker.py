@@ -1,5 +1,5 @@
 import asyncio
-import ccxt.async as cctx
+import ccxt.async as ccxt
 import logging
 import functools
 from datetime import datetime
@@ -33,6 +33,6 @@ async def update_ticker(symbol, exchange, interval=5):
 
 
 tickers = list()
-tickers.append(asyncio.ensure_future(update_ticker('BTC/USDT', cctx.bittrex())))
+tickers.append(asyncio.ensure_future(update_ticker('BTC/USDT', ccxt.bittrex())))
 loop = asyncio.get_event_loop()
 loop.run_until_complete(asyncio.wait(tickers))

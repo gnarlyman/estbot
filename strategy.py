@@ -61,7 +61,7 @@ class StrategyA(engine.BaseEngine):
             inputs = dict()
             inputs['close'] = np.array([c.close for c in self.cm.candles])
             close_rsi = talib.abstract.RSI(inputs, dtype=float, price='close', timeperiod=14)
-            logger.debug('Close RSI: {}'.format(close_rsi[-1]))
+            logger.debug('RSI: {}'.format(close_rsi[-1]))
 
             macd, macdsignal, macdhist = talib.abstract.MACD(
                 inputs, price='close', fastperiod=12, slowperiod=26, signalperiod=9)
