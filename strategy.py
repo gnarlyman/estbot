@@ -1,8 +1,8 @@
 import logging
-import engine
-import trade
-import indicator
 from datetime import datetime
+
+import indicator
+from core import engine
 
 logger = logging.getLogger(__name__)
 
@@ -39,23 +39,24 @@ class StrategyA(engine.BaseEngine):
         logger.debug('MACD: {}'.format(macd_result))
 
     def candle_update(self, candle):
-        ts = datetime.fromtimestamp(candle.time)
-        logger.debug(
-            "{time} UPDATE {symbol}-{exchange} High: {high}, Low: {low}, Open: {open}, Close: {close}".format(
-                time=ts.ctime(),
-                symbol=candle.symbol,
-                exchange=candle.exchange.upper(),
-                high=candle.high,
-                low=candle.low,
-                open=candle.open,
-                close=candle.close
-            )
-        )
+        pass
+        # ts = datetime.fromtimestamp(candle.time)
+        # logger.debug(
+        #     "{time} UPDATE {symbol}-{exchange} High: {high}, Low: {low}, Open: {open}, Close: {close}".format(
+        #         time=ts.ctime(),
+        #         symbol=candle.symbol,
+        #         exchange=candle.exchange.upper(),
+        #         high=candle.high,
+        #         low=candle.low,
+        #         open=candle.open,
+        #         close=candle.close
+        #     )
+        # )
 
-        if not self.backfill:
-            inputs = indicator.gen_inputs(self.cm.candles)
-            rsi_result = indicator.rsi(inputs)
-            macd_result = indicator.macd_crossing(inputs)
-
-            logger.debug('RSI: {}'.format(rsi_result))
-            logger.debug('MACD: {}'.format(macd_result))
+        # if not self.backfill:
+        #     inputs = indicator.gen_inputs(self.cm.candles)
+        #     rsi_result = indicator.rsi(inputs)
+        #     macd_result = indicator.macd_crossing(inputs)
+        #
+        #     logger.debug('RSI: {}'.format(rsi_result))
+        #     logger.debug('MACD: {}'.format(macd_result))

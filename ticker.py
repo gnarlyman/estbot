@@ -1,9 +1,11 @@
 import asyncio
-import ccxt.async as ccxt
-import logging
 import functools
+import logging
 from datetime import datetime
-from db_schema import Price, setup_db
+
+import ccxt.async as ccxt
+
+from core.db_schema import Price, setup_db
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)

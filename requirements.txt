@@ -3,3 +3,4 @@ TA-Lib
 sqlalchemy
 psycopg2
 numpy
+pyqt5
