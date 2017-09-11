@@ -12,10 +12,8 @@ from core.db_schema import Price, setup_db
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-session = setup_db()
 
-
-def update_db(symbol, exchange, future):
+def update_db(db_session, symbol, exchange, future):
     result = future.result()
     logger.debug("RESULT {symbol}-{exchange} : {result}".format(
         symbol=symbol,
@@ -30,13 +28,13 @@ def update_db(symbol, exchange, future):
     price.time = result['datetime']
     price.created_at = datetime.utcnow()
 
-    session.add(price)
-    session.commit()
+    db_session.add(price)
+    db_session.commit()
 
-async def update_ticker(symbol, exch, interval):
+async def update_ticker(db_session, symbol, exch, interval):
     while True:
         future = asyncio.Future()
-        future.add_done_callback(functools.partial(update_db, symbol, exch.id))
+        future.add_done_callback(functools.partial(update_db, db_session, symbol, exch.id))
         asyncio.ensure_future(exch(future, 'fetch_ticker', symbol))
         await asyncio.sleep(interval)
 
@@ -50,6 +48,7 @@ async def update_exchange(exch, interval):
 def main():
     dir_path = os.path.dirname(os.path.realpath(__file__))
     config = util.get_config(os.path.join(dir_path, 'trade.conf'))
+    db_session = setup_db(**config['database'])
 
     tasks = list()
     exchanges = dict()
@@ -65,7 +64,7 @@ def main():
     for symbol, options in config['symbols'].items():
         if options['monitor'] == '1':
             exch = exchanges[options['exchange']]
-            tasks.append(asyncio.ensure_future(update_ticker(symbol, exch, interval=10)))
+            tasks.append(asyncio.ensure_future(update_ticker(db_session, symbol, exch, interval=10)))
 
     main_loop = asyncio.get_event_loop()
     main_loop.run_until_complete(asyncio.gather(*tasks))

@@ -26,6 +26,14 @@ def config_to_dict(confparser):
                 parsed_config['symbols'][symbol].update({
                     option: value
                 })
+        if section == 'database':
+            parsed_config['database'] = dict(
+                host=confparser.get(section, 'host'),
+                port=confparser.get(section, 'port'),
+                db_name=confparser.get(section, 'db_name'),
+                username=confparser.get(section, 'username'),
+                password=confparser.get(section, 'password')
+            )
 
     return parsed_config
 

@@ -2,6 +2,7 @@ from sqlalchemy import Column, Integer, Float, String, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+
 Base = declarative_base()
 
 
@@ -15,8 +16,14 @@ class Price(Base):
     created_at = Column(DateTime)
 
 
-def setup_db():
-    engine = create_engine('postgresql://pgadmin:postgres@suse.local/ccxtbot')
+def setup_db(host, port, db_name, username, password):
+    engine = create_engine('postgresql://{username}:{password}@{host}:{port}/{db_name}'.format(
+        host=host,
+        port=port,
+        db_name=db_name,
+        username=username,
+        password=password
+    ))
     Base.metadata.create_all(engine)
 
     sm = sessionmaker(bind=engine)

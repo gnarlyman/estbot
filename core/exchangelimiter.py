@@ -25,10 +25,10 @@ class ExchangeLimiter(object):
             future, attr, args, kwargs = self.queue.pop(0)
             try:
                 result = await getattr(self.exchange, attr)(*args, **kwargs)
-            except ccxt.errors.RequestTimeout:
-                await asyncio.sleep(self.rate_limit_seconds)
-                continue
-            except concurrent.futures._base.TimeoutError:
+            except KeyboardInterrupt:
+                break
+            except Exception as e:
+                logger.error("ccxt error: {}".format(e.message))
                 await asyncio.sleep(self.rate_limit_seconds)
                 continue
 
