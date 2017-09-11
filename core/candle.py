@@ -76,11 +76,3 @@ class Candle(object):
         if price < self.low:
             self.low = price
         self.close = price
-
-    def to_dict(self):
-        return dict(
-            open=self.open,
-            close=self.close,
-            high=self.high,
-            low=self.low
-        )

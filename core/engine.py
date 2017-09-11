@@ -4,7 +4,8 @@ import time
 from datetime import datetime, timedelta
 
 from core import candle as cndl
-from core.db_schema import setup_db, Price
+from core import trade as trd
+from core.db_schema import Price
 
 logger = logging.getLogger(__name__)
 
@@ -15,20 +16,22 @@ class BaseEngine(object):
     maybe implemented, and strategies created.
     """
 
-    def __init__(self, symbol, exchange, period_seconds=300):
+    def __init__(self, session, symbol, exchange, config, period_seconds):
         """
         :param symbol: COIN/BASE symbol for the market.
         :param exchange: ccxt exchange object id
         :param period_seconds: the candlestick period in seconds
         """
-        self.session = setup_db()
+        self.session = session
         self.symbol = symbol
         self.exchange = exchange
         self.period_seconds = period_seconds
+        self.config = config
         self.cm = None
+        self.tm = None
         self.backfill = True
 
-    async def run(self, interval=1, history_count=10000):
+    async def run(self, interval, history_count):
         """
         Main loop for candle generation and event handling
 
@@ -37,6 +40,7 @@ class BaseEngine(object):
                 to pull from the database
         :return:
         """
+        logger.debug('{}-{} engine started'.format(self.symbol, self.exchange))
         self.cm = self.get_candle_manager()
         for price in self.session.query(Price) \
                 .filter(Price.symbol == self.symbol) \
@@ -46,6 +50,8 @@ class BaseEngine(object):
 
             timestamp = time.mktime(price.time.timetuple())
             self.cm.tick(timestamp_seconds=timestamp, price=price.price)
+
+        logger.debug('{}-{} engine backfill completed'.format(self.symbol, self.exchange))
 
         # we're done backfilling
         self.backfill = False
@@ -69,6 +75,12 @@ class BaseEngine(object):
         cm.register('candle_close', self.candle_close)
         cm.register('candle_update', self.candle_update)
         return cm
+
+    def get_trade_manager(self):
+        coin, base = self.symbol.split('/')
+        tm = trd.TradeManager(base, coin, self.config.position, self.config.trends)
+        tm.register('')
+        return tm
 
     def candle_open(self, candle):
         raise NotImplementedError()

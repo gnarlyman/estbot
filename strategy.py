@@ -40,23 +40,3 @@ class StrategyA(engine.BaseEngine):
 
     def candle_update(self, candle):
         pass
-        # ts = datetime.fromtimestamp(candle.time)
-        # logger.debug(
-        #     "{time} UPDATE {symbol}-{exchange} High: {high}, Low: {low}, Open: {open}, Close: {close}".format(
-        #         time=ts.ctime(),
-        #         symbol=candle.symbol,
-        #         exchange=candle.exchange.upper(),
-        #         high=candle.high,
-        #         low=candle.low,
-        #         open=candle.open,
-        #         close=candle.close
-        #     )
-        # )
-
-        # if not self.backfill:
-        #     inputs = indicator.gen_inputs(self.cm.candles)
-        #     rsi_result = indicator.rsi(inputs)
-        #     macd_result = indicator.macd_crossing(inputs)
-        #
-        #     logger.debug('RSI: {}'.format(rsi_result))
-        #     logger.debug('MACD: {}'.format(macd_result))

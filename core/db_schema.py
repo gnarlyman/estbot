@@ -16,7 +16,7 @@ class Price(Base):
 
 
 def setup_db():
-    engine = create_engine('postgresql://pgadmin:postgres@localhost/ccxtbot')
+    engine = create_engine('postgresql://pgadmin:postgres@suse.local/ccxtbot')
     Base.metadata.create_all(engine)
 
     sm = sessionmaker(bind=engine)

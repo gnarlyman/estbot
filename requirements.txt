@@ -4,3 +4,4 @@ sqlalchemy
 psycopg2
 numpy
 pyqt5
+asyncio_throttler
