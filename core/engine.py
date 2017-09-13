@@ -84,7 +84,7 @@ class BaseEngine(object):
             coin,
             self.config['symbols'][self.symbol]['position'],
             self.config['symbols'][self.symbol]['trends'],
-            partition_trends=10
+            partition_trends=int(self.config['symbols'][self.symbol].get('partition_trends', 0))
         )
         tm.register('trend_up', self.trend_up)
         tm.register('trend_down', self.trend_down)
