@@ -2,7 +2,6 @@ import asyncio
 import logging
 
 import ccxt.async as ccxt
-import concurrent.futures
 
 logger = logging.getLogger(__name__)
 

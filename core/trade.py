@@ -34,6 +34,8 @@ class TradeManager(object):
         self.curr_trend_price = None
         self.upper_watch = None
         self.lower_watch = None
+        self.middle_watch = None
+        self.relative_to_middle = None
 
         self.callbacks = dict()
 
@@ -59,6 +61,7 @@ class TradeManager(object):
     def tick(self, candles):
         if len(candles) >= 2:
 
+            # compare current price to previous price
             if candles[-1].close > candles[-2].close:
                 self.trigger('trend_up')
             elif candles[-1].close < candles[-2].close:
@@ -66,23 +69,49 @@ class TradeManager(object):
             else:
                 self.trigger('trend_none')
 
+            # track our highs and lows, trigger on crossing
             if not self.curr_trend_price:
-                self._get_trend_prices(candles)
+                self._get_trend_prices(candles[-1].close)
 
             if candles[-1].close > self.upper_watch:
-                self._get_trend_prices(candles)
+                self._get_trend_prices(candles[-1].close)
                 self.trigger('trend_price_up')
             elif candles[-1].close < self.lower_watch:
-                self._get_trend_prices(candles)
+                self._get_trend_prices(candles[-1].close)
                 self.trigger('trend_price_down')
+
+            # track our present middle, trigger on crossing
+            if not self.relative_to_middle:
+                self._get_relative_to_middle(candles[-1].close)
             else:
-                self.trigger('trend_price_none')
+                if candles[-1].close > self.middle_watch and self.relative_to_middle < 0:
+                    self._get_relative_to_middle(candles[-1].close)
+                    self.trigger('trend_price_up')
+                elif candles[-1].close < self.middle_watch and self.relative_to_middle > 0:
+                    self._get_relative_to_middle(candles[-1].close)
+                    self.trigger('trend_price_down')
 
-    def _get_trend_prices(self, candles):
-        self.curr_trend_price = util.find_closest(candles[-1].close, list(self.trends.keys()))
+    def _get_relative_to_middle(self, latest_price):
+        if latest_price > self.middle_watch:
+            self.relative_to_middle = 1
+        elif latest_price < self.middle_watch:
+            self.relative_to_middle = 1
+        else:
+            self.relative_to_middle = 0
 
-        self.upper_watch = util.find_between(candles[-1].close, list(self.trends.keys()), offset=0)
-        self.lower_watch = util.find_between(candles[-1].close, list(self.trends.keys()), offset=-1)
+    def _get_trend_prices(self, latest_price):
+        """
+        identify the nearest trend to the latest price
+        also identify the trend above, and the trend below
+        :param latest_price: the latest price
+        :return:
+        """
+        self.curr_trend_price = util.find_closest(latest_price, list(self.trends.keys()))
+        trends = sorted(list(self.trends.keys()), key=lambda i: float(i))
+        self.upper_watch = trends[trends.index(self.curr_trend_price) + 1]
+        self.middle_watch = trends[trends.index(self.curr_trend_price)]
+        self.lower_watch = trends[trends.index(self.curr_trend_price) - 1]
+
         logger.debug('new trend prices: Upper: {}, Lower: {}, Current: {}'.format(
             self.upper_watch,
             self.lower_watch,
