@@ -42,6 +42,7 @@ class BaseEngine(object):
         """
         logger.debug('{}-{} engine started'.format(self.symbol, self.exchange))
         self.cm = self.get_candle_manager()
+        self.tm = self.get_trade_manager()
         for price in self.session.query(Price) \
                 .filter(Price.symbol == self.symbol) \
                 .filter(Price.exchange == self.exchange) \
@@ -78,8 +79,20 @@ class BaseEngine(object):
 
     def get_trade_manager(self):
         coin, base = self.symbol.split('/')
-        tm = trd.TradeManager(base, coin, self.config.position, self.config.trends)
-        tm.register('')
+        tm = trd.TradeManager(
+            base,
+            coin,
+            self.config['symbols'][self.symbol]['position'],
+            self.config['symbols'][self.symbol]['trends'],
+            partition_trends=10
+        )
+        tm.register('trend_up', self.trend_up)
+        tm.register('trend_down', self.trend_down)
+        tm.register('trend_none', self.trend_none)
+        tm.register('trend_price_up', self.trend_price_up)
+        tm.register('trend_price_down', self.trend_price_down)
+        tm.register('trend_price_none', self.trend_price_none)
+
         return tm
 
     def candle_open(self, candle):
@@ -89,4 +102,46 @@ class BaseEngine(object):
         raise NotImplementedError()
 
     def candle_update(self, candle):
+        raise NotImplementedError()
+
+    def trend_up(self):
+        """
+        called when the price of a market is trending upward
+        :return:
+        """
+        raise NotImplementedError()
+
+    def trend_down(self):
+        """
+        called when the price of a market is trending downward
+        :return:
+        """
+        raise NotImplementedError()
+
+    def trend_none(self):
+        """
+        called when the price of a market is not trending up or down
+        :return:
+        """
+        raise NotImplementedError()
+
+    def trend_price_up(self):
+        """
+        called when the price reaches a trend line in an upward direction
+        :return:
+        """
+        raise NotImplementedError()
+
+    def trend_price_down(self):
+        """
+        called when the price reaches a trend line in an downward direction
+        :return:
+        """
+        raise NotImplementedError()
+
+    def trend_price_none(self):
+        """
+        called when the price trendline has not changed
+        :return:
+        """
         raise NotImplementedError()

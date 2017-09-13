@@ -28,7 +28,7 @@ class ExchangeLimiter(object):
             except KeyboardInterrupt:
                 break
             except Exception as e:
-                logger.error("ccxt error: {}".format(e.message))
+                logger.error("ccxt error: {}".format(e))
                 await asyncio.sleep(self.rate_limit_seconds)
                 continue
 
