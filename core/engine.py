@@ -4,7 +4,7 @@ import time
 from datetime import datetime, timedelta
 
 from core import candle as cndl
-from core import trade as trd
+from core import trend as trd
 from core.db_schema import Price
 
 logger = logging.getLogger(__name__)
@@ -78,11 +78,7 @@ class BaseEngine(object):
         return cm
 
     def get_trade_manager(self):
-        coin, base = self.symbol.split('/')
-        tm = trd.TradeManager(
-            base,
-            coin,
-            self.config['symbols'][self.symbol]['position'],
+        tm = trd.TrendManager(
             self.config['symbols'][self.symbol]['trends'],
             partition_trends=int(self.config['symbols'][self.symbol].get('partition_trends', 0))
         )

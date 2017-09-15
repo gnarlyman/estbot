@@ -4,15 +4,9 @@ import core.util as util
 logger = logging.getLogger(__name__)
 
 
-class TradeManager(object):
-    def __init__(self, base, coin, position, trends,
-                 position_count=1, partition_trends=0):
+class TrendManager(object):
+    def __init__(self, trends, partition_trends=0):
         """
-
-        :param base: symbol for base currency (e.g. USD)
-        :param coin: symbol for market currency (e.g. BTC)
-        :param position: where our profit line is
-        :param position_count: how many positions bought
         :param partition_trends: how many trends to fill in gaps
         :param trends: historical or estimated support/resistence lines
             key: price location in market
@@ -23,14 +17,9 @@ class TradeManager(object):
                 3500: 80
             }
         """
-        self.base = base
-        self.coin = coin
-        self.position = float(position)
-        self.position_count = float(position_count)
         self.partition_trends = int(partition_trends)
         self.trends = self._get_trends(trends)
 
-        self.positions = list((self.position, ))
         self.curr_price = None
         self.prev_price = None
         self.curr_trend_price = None
@@ -114,8 +103,3 @@ class TradeManager(object):
 
     def register(self, event, callback):
         self.callbacks.setdefault(event, callback)
-
-
-class Schedule(object):
-    def __init__(self):
-        pass
