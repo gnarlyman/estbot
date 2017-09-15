@@ -91,7 +91,8 @@ class BaseEngine(object):
         tm.register('trend_none', self.trend_none)
         tm.register('trend_price_up', self.trend_price_up)
         tm.register('trend_price_down', self.trend_price_down)
-        tm.register('trend_price_none', self.trend_price_none)
+        tm.register('trend_retrace_up', self.trend_retrace_up)
+        tm.register('trend_retrace_down', self.trend_retrace_down)
 
         return tm
 
@@ -139,9 +140,18 @@ class BaseEngine(object):
         """
         raise NotImplementedError()
 
-    def trend_price_none(self):
+    def trend_retrace_up(self):
         """
-        called when the price trendline has not changed
+        called when the price retraces the middle trend line
+        indicates the price was below the middle trend, and moved above
+        :return:
+        """
+        raise NotImplementedError()
+
+    def trend_retrace_down(self):
+        """
+        called when the price retraces the middle trend line
+        indicates the price was above the middle trend, and moved below
         :return:
         """
         raise NotImplementedError()

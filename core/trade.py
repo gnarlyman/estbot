@@ -25,12 +25,14 @@ class TradeManager(object):
         """
         self.base = base
         self.coin = coin
-        self.position = int(position)
-        self.position_count = int(position_count)
+        self.position = float(position)
+        self.position_count = float(position_count)
         self.partition_trends = int(partition_trends)
         self.trends = self._get_trends(trends)
 
         self.positions = list((self.position, ))
+        self.curr_price = None
+        self.prev_price = None
         self.curr_trend_price = None
         self.upper_watch = None
         self.lower_watch = None
@@ -59,45 +61,33 @@ class TradeManager(object):
         return trends
 
     def tick(self, candles):
-        if len(candles) >= 2:
+        self.prev_price = self.curr_price
+        self.curr_price = candles[-1].close
+
+        if self.prev_price and len(candles) >= 2:
 
             # compare current price to previous price
-            if candles[-1].close > candles[-2].close:
+            if self.curr_price > self.prev_price:
                 self.trigger('trend_up')
-            elif candles[-1].close < candles[-2].close:
+            elif self.curr_price < self.prev_price:
                 self.trigger('trend_down')
             else:
                 self.trigger('trend_none')
 
             # track our highs and lows, trigger on crossing
             if not self.curr_trend_price:
-                self._get_trend_prices(candles[-1].close)
+                self._get_trend_prices(self.curr_price)
 
-            if candles[-1].close > self.upper_watch:
-                self._get_trend_prices(candles[-1].close)
+            if self.curr_price > self.upper_watch:
+                self._get_trend_prices(self.curr_price)
                 self.trigger('trend_price_up')
-            elif candles[-1].close < self.lower_watch:
-                self._get_trend_prices(candles[-1].close)
+            elif self.curr_price < self.lower_watch:
+                self._get_trend_prices(self.curr_price)
                 self.trigger('trend_price_down')
-
-            # track our present middle, trigger on crossing
-            if not self.relative_to_middle:
-                self._get_relative_to_middle(candles[-1].close)
-            else:
-                if candles[-1].close > self.middle_watch and self.relative_to_middle < 0:
-                    self._get_relative_to_middle(candles[-1].close)
-                    self.trigger('trend_price_up')
-                elif candles[-1].close < self.middle_watch and self.relative_to_middle > 0:
-                    self._get_relative_to_middle(candles[-1].close)
-                    self.trigger('trend_price_down')
-
-    def _get_relative_to_middle(self, latest_price):
-        if latest_price > self.middle_watch:
-            self.relative_to_middle = 1
-        elif latest_price < self.middle_watch:
-            self.relative_to_middle = 1
-        else:
-            self.relative_to_middle = 0
+            elif self.prev_price < self.middle_watch < self.curr_price:
+                self.trigger('trend_retrace_up')
+            elif self.prev_price > self.middle_watch > self.curr_price:
+                self.trigger('trend_retrace_down')
 
     def _get_trend_prices(self, latest_price):
         """

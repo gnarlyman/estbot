@@ -47,22 +47,22 @@ class StrategyA(engine.BaseEngine):
 
     def trend_up(self):
         logger.debug('trend_up: {} > {} - TP: {}'.format(
-            self.cm.candles[-1].close,
-            self.cm.candles[-2].close,
+            self.tm.curr_price,
+            self.tm.prev_price,
             self.tm.curr_trend_price
         ))
 
     def trend_down(self):
         logger.debug('trend_down: {} < {} - TP: {}'.format(
-            self.cm.candles[-1].close,
-            self.cm.candles[-2].close,
+            self.tm.curr_price,
+            self.tm.prev_price,
             self.tm.curr_trend_price
         ))
 
     def trend_none(self):
         logger.debug('trend_none: {} == {} - TP: {}'.format(
-            self.cm.candles[-1].close,
-            self.cm.candles[-2].close,
+            self.tm.curr_price,
+            self.tm.prev_price,
             self.tm.curr_trend_price
         ))
 
@@ -72,5 +72,8 @@ class StrategyA(engine.BaseEngine):
     def trend_price_down(self):
         logger.debug('trend_price_down: {}'.format(self.tm.curr_trend_price))
 
-    def trend_price_none(self):
-        logger.debug('trend_price_none: {}'.format(self.tm.curr_trend_price))
+    def trend_retrace_up(self):
+        logger.debug('trend_retrace_up: {} > {}'.format(self.tm.curr_price, self.tm.curr_trend_price))
+
+    def trend_retrace_down(self):
+        logger.debug('trend_retrace_down: {} < {}'.format(self.tm.curr_price, self.tm.curr_trend_price))
