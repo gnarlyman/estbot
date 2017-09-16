@@ -19,7 +19,7 @@ async def main():
     engines = list()
     for symbol, options in config['symbols'].items():
         if options['trade'] == '1':
-            eng = strategy.StrategyA(db_session, symbol, options['exchange'], config, period_seconds=300)
+            eng = strategy.StrategyA(db_session, symbol, options['exchange'], config)
             engines.append(eng.run(interval=1, history_count=10000))
 
     await asyncio.gather(*engines)
