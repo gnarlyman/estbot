@@ -3,8 +3,7 @@ ESTBOT - Extremely Specific Trading Bot
 
 This bot is not going to automatically make you rich.
 
-ESTBOT is design to be a simple as possible, and implements
-high level concepts like a Strategy, TradeManager, and Scheduling.
+ESTBOT is a tool with lots of configuration options. 
 
 Users should choose a market carefully, performing their own
 technical analysis, make a plan, and configure the bot to trade

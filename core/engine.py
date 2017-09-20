@@ -48,17 +48,20 @@ class BaseEngine(object):
 
         self.backfill = True
 
-    async def run(self, interval, history_count):
+    async def run(self, interval, history_count, pauses=0, stop_at=None):
         """
         Main loop for candle generation and event handling
 
         :param interval: frequency to poll database
         :param history_count: number of historical Price objects
                 to pull from the database
+        :param pauses: useful for stepping through a backfill,
+        performing X loops before waiting for user input
         :return:
         """
         logger.debug('{}-{} engine started'.format(self.symbol, self.exchange_id))
 
+        counter = 0
         for price in self.db_session.query(Price) \
                 .filter(Price.symbol == self.symbol) \
                 .filter(Price.exchange == self.exchange_id) \
@@ -67,6 +70,13 @@ class BaseEngine(object):
 
             timestamp = time.mktime(price.time.timetuple())
             self.candle.tick(timestamp_seconds=timestamp, price=price.price)
+            counter += 1
+            if pauses:
+                if counter % pauses == 0:
+                    input('{} loops, press return to continue'.format(counter))
+            if stop_at:
+                if price.time >= stop_at:
+                    return
 
         logger.debug('{}-{} engine backfill completed'.format(self.symbol, self.exchange_id))
 

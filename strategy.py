@@ -42,8 +42,26 @@ class StrategyA(engine.BaseEngine):
 
         logger.debug("trends: {}".format(sorted(self.trend.trends.items(), key=lambda k: int(k[0]))))
 
+        if rsi_result == 1:
+            logger.debug('RSI {}: buying'.format(rsi_result))
+            self.schedule.allocate(self.trend.middle_watch, self.trend.curr_price)
+        elif rsi_result == -1:
+            logger.debug('RSI {}: selling'.format(rsi_result))
+            self.schedule.distribute(self.trend.middle_watch, self.trend.curr_price)
+
     def candle_update(self, candle):
         self.trend.tick(self.candle.candles)
+        self.schedule.tick(self.trend.curr_price)
+
+        inputs = indicator.gen_inputs(self.candle.candles)
+        rsi_result = indicator.rsi(inputs)
+
+        if rsi_result == 1:
+            logger.debug('RSI {}: buying'.format(rsi_result))
+            self.schedule.allocate(self.trend.middle_watch, self.trend.curr_price)
+        elif rsi_result == -1:
+            logger.debug('RSI {}: selling'.format(rsi_result))
+            self.schedule.distribute(self.trend.middle_watch, self.trend.curr_price)
 
     def trend_up(self):
         logger.debug('trend_up: {} > {} - TP: {}'.format(

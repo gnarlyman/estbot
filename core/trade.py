@@ -1,3 +1,8 @@
+import logging
+
+logger = logging.getLogger(__name__)
+
+
 class Trade(object):
     def __init__(self, base, coin, exchange, position_size, paper=False):
         """
@@ -17,7 +22,7 @@ class Trade(object):
         self.paper = paper
 
     def long(self, price):
-        pass
+        logger.debug('received Long request at {}'.format(price))
 
     def short(self, price):
-        pass
+        logger.debug('received Short request at {}'.format(price))

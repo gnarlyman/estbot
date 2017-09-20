@@ -67,10 +67,10 @@ class TrendManager(object):
             if not self.curr_trend_price:
                 self._get_trend_prices(self.curr_price)
 
-            if self.curr_price > self.upper_watch:
+            if self.curr_price >= self.upper_watch:
                 self._get_trend_prices(self.curr_price)
                 self.trigger('trend_price_up')
-            elif self.curr_price < self.lower_watch:
+            elif self.curr_price <= self.lower_watch:
                 self._get_trend_prices(self.curr_price)
                 self.trigger('trend_price_down')
             elif self.prev_price < self.middle_watch < self.curr_price:

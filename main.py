@@ -1,12 +1,13 @@
 import os
 import asyncio
-import logging
+import logging.config
+from datetime import datetime
 
 import strategy
 import core.util as util
 from core.db_schema import setup_db
 
-logging.basicConfig(level=logging.DEBUG)
+logging.config.fileConfig('logging.conf')
 logger = logging.getLogger(__name__)
 
 
@@ -20,7 +21,11 @@ async def main():
     for symbol, options in config['symbols'].items():
         if options['trade'] == '1':
             eng = strategy.StrategyA(db_session, symbol, options['exchange'], config)
-            engines.append(eng.run(interval=1, history_count=10000))
+            engines.append(eng.run(
+                interval=1,
+                history_count=10000,
+                stop_at=datetime.strptime("Wed Sep 12 07:05:00 2017", "%a %b %d %H:%M:%S %Y")
+            ))
 
     await asyncio.gather(*engines)
 
