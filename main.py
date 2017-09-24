@@ -24,7 +24,7 @@ async def main():
             engines.append(eng.run(
                 interval=1,
                 history_count=10000,
-                stop_at=datetime.strptime("Wed Sep 12 07:05:00 2017", "%a %b %d %H:%M:%S %Y")
+                stop_at=datetime.strptime("Wed Sep 13 07:05:00 2017", "%a %b %d %H:%M:%S %Y")
             ))
 
     await asyncio.gather(*engines)

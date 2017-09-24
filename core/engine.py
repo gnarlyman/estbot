@@ -123,7 +123,7 @@ class BaseEngine(object):
         return tm
 
     def get_trade_manager(self):
-        trade = core.trade.Trade(
+        trade = core.trade.TradeManager(
             base=self.base,
             coin=self.coin,
             exchange=self.exchange,

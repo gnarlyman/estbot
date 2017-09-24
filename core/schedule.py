@@ -4,11 +4,12 @@ logger = logging.getLogger(__name__)
 
 
 class ScheduleManager(object):
+
     def __init__(self, trade, frequency):
         """
         Manages schedules, prevents duplicate schedule, and expires invalid schedules.
 
-        :param trade: core.trade.Trade object
+        :param trade: core.trade.TradeManager object
         """
         self.trade = trade
         self.frequency = frequency
@@ -82,11 +83,12 @@ class ScheduleManager(object):
 
 
 class Schedule(object):
+
     def __init__(self, trade, trend_price, curr_price, position_count, frequency):
         """
         Schedule trades over time.
 
-        :param trade: core.trade.Trade object
+        :param trade: core.trade.TradeManager object
         :param trend_price: the trend price of this schedule
         :param position_count: the number of positions to execute
         :param frequency: how often to execute schedules (in ticks)
@@ -118,10 +120,11 @@ class Schedule(object):
         if self.counter % self.frequency == 0:
             self.positions_executed += 1
             logger.debug('executing {}-{} {}/{} at price: {}, trend: {}'.format(
-                self.__class__, self.start_price, self.positions_executed, self.position_count,
+                self, self.start_price, self.positions_executed, self.position_count,
                 price, self.trend_price
             ))
             self.execute(price)
+        self.trade.tick(price)
 
     def execute(self, price):
         raise NotImplementedError()
@@ -132,8 +135,14 @@ class Allocation(Schedule):
     def execute(self, price):
         self.trade.long(price)
 
+    def __repr__(self):
+        return "<Allocation>"
+
 
 class Distribution(Schedule):
 
     def execute(self, price):
         self.trade.short(price)
+
+    def __repr__(self):
+        return "<Distribution>"
