@@ -6,7 +6,7 @@ from sqlalchemy.orm import sessionmaker
 Base = declarative_base()
 
 
-class Price(Base):
+class TablePrice(Base):
     __tablename__ = 'price'
     id = Column(Integer, primary_key=True)
     symbol = Column(String)

@@ -1,48 +1,76 @@
 import os
-import asyncio
-import functools
+import json
 import logging
 from datetime import datetime
+from socketclusterclient import Socketcluster
 
 import core.util as util
-import core.exchangelimiter
 
-from core.db_schema import Price, setup_db
+from core.database import TablePrice, setup_db
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
-def update_db(db_session, symbol, exchange, future):
-    result = future.result()
-    logger.debug("RESULT {symbol}-{exchange} : {result}".format(
-        symbol=symbol,
-        exchange=exchange,
-        result=result['last']
-    ))
+class Ticker(object):
 
-    price = Price()
-    price.symbol = symbol
-    price.exchange = exchange
-    price.price = result['last']
-    price.time = result['datetime']
-    price.created_at = datetime.utcnow()
+    def __init__(self, tasks, db_session, api_credentials):
+        self.tasks = tasks
+        self.db_session = db_session
+        self.api_credentials = api_credentials
 
-    db_session.add(price)
-    db_session.commit()
+    def subscribe(self, socket):
+        for task in self.tasks:
+            coin, base = task['symbol'].split('/')
+            symbol = "{}--{}".format(coin, base)
+            exchange = task['exchange']
 
-async def update_ticker(db_session, symbol, exch, interval):
-    while True:
-        future = asyncio.Future()
-        future.add_done_callback(functools.partial(update_db, db_session, symbol, exch.id))
-        asyncio.ensure_future(exch(future, 'fetch_ticker', symbol))
-        await asyncio.sleep(interval)
+            trade_channel = 'TRADE-{exchange}--{symbol}'.format(exchange=exchange, symbol=symbol)
 
+            socket.subscribe(trade_channel)
+            socket.onchannel(trade_channel, self.update_db)  # This is used for watching messages over channel
 
-async def update_exchange(exch, interval):
-    while True:
-        await exch.run()
-        await asyncio.sleep(interval)
+    def update_db(self, _, data):
+        symbol = data['label']
+        exchange = data['exchange']
+        logger.debug("RESULT {symbol}-{exchange} : {result}".format(
+            symbol=symbol,
+            exchange=exchange,
+            result=data['price']
+        ))
+
+        price = TablePrice()
+        price.symbol = symbol
+        price.exchange = exchange
+        price.price = data['price']
+        price.time = datetime.strptime(data['time'], "%Y-%m-%dT%H:%M:%S")
+        price.created_at = datetime.utcnow()
+
+        self.db_session.add(price)
+        self.db_session.commit()
+
+    @staticmethod
+    def on_set_authentication(socket, token):
+        logger.info("Token received " + token)
+        socket.setAuthtoken(token)
+
+    def on_authentication(self, socket, isauthenticated):
+        logger.info("Authenticated is " + str(isauthenticated))
+
+        def ack(_, __, data):
+            logger.debug("token is " + json.dumps(data, sort_keys=True))
+            self.subscribe(socket)
+
+        socket.emitack("auth", self.api_credentials, ack)
+
+    def on_connect(self, socket):
+        pass
+
+    def on_disconnect(self, socket):
+        pass
+
+    def on_connect_error(self, socket, error):
+        pass
 
 
 def main():
@@ -50,24 +78,27 @@ def main():
     config = util.get_config(os.path.join(dir_path, 'trade.conf'))
     db_session = setup_db(**config['database'])
 
+    api_credentials = {
+        'apiKey': config['coinigy']['api_key'],
+        'apiSecret': config['coinigy']['api_secret'],
+    }
+
     tasks = list()
-    exchanges = dict()
     for symbol, options in config['symbols'].items():
         if options['monitor'] == '1':
-            e = options['exchange']
-            if e not in exchanges:
-                exch = core.exchangelimiter.ExchangeLimiter(e, rate_limit_seconds=1)
-                logger.debug("{}: exchange created".format(exch.id))
-                exchanges.setdefault(e, exch)
-                tasks.append(asyncio.Task(update_exchange(exch, interval=2)))
+            tasks.append(dict(
+                exchange=options['exchange'],
+                symbol=symbol
+            ))
 
-    for symbol, options in config['symbols'].items():
-        if options['monitor'] == '1':
-            exch = exchanges[options['exchange']]
-            tasks.append(asyncio.ensure_future(update_ticker(db_session, symbol, exch, interval=10)))
+    tick = Ticker(tasks, db_session, api_credentials)
 
-    main_loop = asyncio.get_event_loop()
-    main_loop.run_until_complete(asyncio.gather(*tasks))
+    socket = Socketcluster.socket("wss://sc-02.coinigy.com/socketcluster/")
+    socket.setBasicListener(tick.on_connect, tick.on_disconnect, tick.on_connect_error)
+    socket.setAuthenticationListener(tick.on_set_authentication, tick.on_authentication)
+    socket.setreconnection(True)
+    socket.connect()
+
 
 if __name__ == '__main__':
     main()

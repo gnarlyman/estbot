@@ -5,7 +5,8 @@ from datetime import datetime
 
 import strategy
 import core.util as util
-from core.db_schema import setup_db
+from core.database import setup_db
+
 
 logging.config.fileConfig('logging.conf')
 logger = logging.getLogger(__name__)
@@ -24,7 +25,7 @@ async def main():
             engines.append(eng.run(
                 interval=1,
                 history_count=10000,
-                stop_at=datetime.strptime("Wed Sep 13 07:05:00 2017", "%a %b %d %H:%M:%S %Y")
+                #stop_at=datetime.strptime("Wed Sep 13 07:05:00 2017", "%a %b %d %H:%M:%S %Y")
             ))
 
     await asyncio.gather(*engines)

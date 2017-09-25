@@ -7,9 +7,9 @@ import core.candle
 import core.trend
 import core.trade
 import core.schedule
-import core.exchangelimiter
+import core.exchange
 
-from core.db_schema import Price
+from core.database import TablePrice
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +39,8 @@ class BaseEngine(object):
         self.position_size = float(self.config['symbols'][self.symbol]['position_size'])
         self.trade_frequency = int(self.config['symbols'][self.symbol]['trade_frequency'])
         self.paper = bool(self.config['symbols'][self.symbol]['paper'])
+        self.api_key = self.config['coinigy']['api_key']
+        self.api_secret = self.config['coinigy']['api_secret']
 
         self.exchange = self.get_exchange()
         self.candle = self.get_candle_manager()
@@ -48,7 +50,15 @@ class BaseEngine(object):
 
         self.backfill = True
 
-    async def run(self, interval, history_count, pauses=0, stop_at=None):
+    def get_table_price(self, history_count):
+        for price in self.db_session.query(TablePrice) \
+                .filter(TablePrice.symbol == self.symbol) \
+                .filter(TablePrice.exchange == self.exchange_id) \
+                .order_by(TablePrice.time) \
+                .limit(history_count):
+            yield price
+
+    async def run(self, interval, history_count, pauses=0, stop_at=None, test=False):
         """
         Main loop for candle generation and event handling
 
@@ -62,12 +72,7 @@ class BaseEngine(object):
         logger.debug('{}-{} engine started'.format(self.symbol, self.exchange_id))
 
         counter = 0
-        for price in self.db_session.query(Price) \
-                .filter(Price.symbol == self.symbol) \
-                .filter(Price.exchange == self.exchange_id) \
-                .order_by(Price.time) \
-                .limit(history_count):
-
+        for price in self.get_table_price(history_count):
             timestamp = time.mktime(price.time.timetuple())
             self.candle.tick(timestamp_seconds=timestamp, price=price.price)
             counter += 1
@@ -83,21 +88,22 @@ class BaseEngine(object):
         # we're done backfilling
         self.backfill = False
 
-        while True:
-            now = datetime.utcnow()
-            for price in self.db_session.query(Price) \
-                    .filter(Price.symbol == self.symbol) \
-                    .filter(Price.exchange == self.exchange_id) \
-                    .filter(Price.created_at > now - timedelta(seconds=interval)) \
-                    .order_by(Price.time):
+        if not test:
+            while True:
+                now = datetime.utcnow()
+                for price in self.db_session.query(TablePrice) \
+                        .filter(TablePrice.symbol == self.symbol) \
+                        .filter(TablePrice.exchange == self.exchange_id) \
+                        .filter(TablePrice.created_at > now - timedelta(seconds=interval)) \
+                        .order_by(TablePrice.time):
 
-                timestamp = time.mktime(price.time.timetuple())
-                self.candle.tick(timestamp_seconds=timestamp, price=price.price)
+                    timestamp = time.mktime(price.time.timetuple())
+                    self.candle.tick(timestamp_seconds=timestamp, price=price.price)
 
-            await asyncio.sleep(interval)
+                await asyncio.sleep(interval)
 
     def get_exchange(self):
-        return core.exchangelimiter.ExchangeLimiter(self.exchange_id, rate_limit_seconds=1)
+        return core.exchange.ExchangeLimiter(self.exchange_id, self.api_key, self.api_secret, rate_limit_seconds=1)
 
     def get_candle_manager(self):
         cm = core.candle.CandleManager(self.symbol, self.exchange_id, self.period_seconds)

@@ -48,6 +48,11 @@ def config_to_dict(confparser):
                 username=confparser.get(section, 'username'),
                 password=confparser.get(section, 'password')
             )
+        elif section == 'coinigy':
+            parsed_config['coinigy'] = dict(
+                api_key=confparser.get(section, 'api_key'),
+                api_secret=confparser.get(section, 'api_secret')
+            )
 
     return parsed_config
 
