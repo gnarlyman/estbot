@@ -9,7 +9,7 @@ import core.trade
 import core.schedule
 import core.exchange
 
-from core.database import TablePrice
+from core.database import Trades
 
 logger = logging.getLogger(__name__)
 
@@ -50,13 +50,13 @@ class BaseEngine(object):
 
         self.backfill = True
 
-    def get_table_price(self, history_count):
-        for price in self.db_session.query(TablePrice) \
-                .filter(TablePrice.symbol == self.symbol) \
-                .filter(TablePrice.exchange == self.exchange_id) \
-                .order_by(TablePrice.time) \
+    def get_trade_history(self, history_count):
+        for trade in self.db_session.query(Trades) \
+                .filter(Trades.symbol == self.symbol) \
+                .filter(Trades.exchange == self.exchange_id) \
+                .order_by(Trades.time) \
                 .limit(history_count):
-            yield price
+            yield trade
 
     async def run(self, interval, history_count, pauses=0, stop_at=None, test=False):
         """
@@ -71,8 +71,10 @@ class BaseEngine(object):
         """
         logger.debug('{}-{} engine started'.format(self.symbol, self.exchange_id))
 
+        logger.info('get trade history for {}-{}'.format(self.symbol, self.exchange_id))
+
         counter = 0
-        for price in self.get_table_price(history_count):
+        for price in self.get_trade_history(history_count):
             timestamp = time.mktime(price.time.timetuple())
             self.candle.tick(timestamp_seconds=timestamp, price=price.price)
             counter += 1
@@ -83,19 +85,20 @@ class BaseEngine(object):
                 if price.time >= stop_at:
                     return
 
-        logger.debug('{}-{} engine backfill completed'.format(self.symbol, self.exchange_id))
+        logger.info('completed trade history for {}-{}'.format(self.symbol, self.exchange_id))
 
         # we're done backfilling
         self.backfill = False
 
         if not test:
+            logger.info('monitoring {}-{}'.format(self.symbol, self.exchange_id))
             while True:
                 now = datetime.utcnow()
-                for price in self.db_session.query(TablePrice) \
-                        .filter(TablePrice.symbol == self.symbol) \
-                        .filter(TablePrice.exchange == self.exchange_id) \
-                        .filter(TablePrice.created_at > now - timedelta(seconds=interval)) \
-                        .order_by(TablePrice.time):
+                for price in self.db_session.query(Trades) \
+                        .filter(Trades.symbol == self.symbol) \
+                        .filter(Trades.exchange == self.exchange_id) \
+                        .filter(Trades.created_at > now - timedelta(seconds=interval)) \
+                        .order_by(Trades.time):
 
                     timestamp = time.mktime(price.time.timetuple())
                     self.candle.tick(timestamp_seconds=timestamp, price=price.price)

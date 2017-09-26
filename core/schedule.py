@@ -77,7 +77,7 @@ class ScheduleManager(object):
                 distribution.tick(price)
 
         if len(self.allocations) or len(self.distributions):
-            logger.debug('Allocation Schedules: {}, Distribution Schedules: {}'.format(
+            logger.info('Allocation Schedules: {}, Distribution Schedules: {}'.format(
                 len(self.allocations), len(self.distributions)
             ))
 

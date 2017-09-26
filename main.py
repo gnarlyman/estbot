@@ -21,6 +21,7 @@ async def main():
     engines = list()
     for symbol, options in config['symbols'].items():
         if options['trade'] == '1':
+            logger.info('trading {} on {}'.format(symbol, options['exchange']))
             eng = strategy.StrategyA(db_session, symbol, options['exchange'], config)
             engines.append(eng.run(
                 interval=1,

@@ -3,7 +3,7 @@ host = suse.local
 port = 5432
 username = pgadmin
 password = postgres
-db_name = ccxtbot
+db_name = estbot
 
 [coinigy]
 api_key = e493a932d2877eb4e7f59427017bbb06
@@ -33,7 +33,7 @@ monitor = 1
 trade = 0
 
 [symbol:PLNX:LTC/BTC]
-monitor = 1
+monitor = 0
 trade = 0
 
 [symbol:BITF:XRP/BTC]

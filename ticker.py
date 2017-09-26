@@ -6,7 +6,7 @@ from socketclusterclient import Socketcluster
 
 import core.util as util
 
-from core.database import TablePrice, setup_db
+from core.database import Trades, setup_db
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -39,14 +39,17 @@ class Ticker(object):
             result=data['price']
         ))
 
-        price = TablePrice()
-        price.symbol = symbol
-        price.exchange = exchange
-        price.price = data['price']
-        price.time = datetime.strptime(data['time'], "%Y-%m-%dT%H:%M:%S")
-        price.created_at = datetime.utcnow()
+        trade = Trades()
+        trade.symbol = symbol
+        trade.exchange = exchange
+        trade.price = data['price']
+        trade.type = data['type']
+        trade.quantity = data['quantity']
+        trade.total = data['total']
+        trade.time = datetime.strptime(data['time'], "%Y-%m-%dT%H:%M:%S")
+        trade.created_at = datetime.utcnow()
 
-        self.db_session.add(price)
+        self.db_session.add(trade)
         self.db_session.commit()
 
     @staticmethod
