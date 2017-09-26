@@ -1,8 +1,6 @@
-ccxt
+numpy
 TA-Lib
 sqlalchemy
 psycopg2
-numpy
-pyqt5
 requests
 socketclusterclient
