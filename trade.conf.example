@@ -6,8 +6,8 @@ password = postgres
 db_name = estbot
 
 [coinigy]
-api_key = e493a932d2877eb4e7f59427017bbb06
-api_secret = 4f1af4703bd9ca7436d4f25d0ef78b49
+api_key = <api key>
+api_secret = <api secret>
 
 [symbol:BTRX:BTC/USDT]
 monitor = 1
