@@ -22,14 +22,17 @@ class StrategyA(engine.BaseEngine):
 
         ts = datetime.fromtimestamp(candle.time)
         logger.debug(
-            "{time} CLOSE {symbol}-{exchange}, High: {high}, Low: {low}, Open: {open}, Close: {close}".format(
+            "{time} CLOSE {symbol}-{exchange}, High: {high}, Low: {low}, "
+            "Open: {open}, Close: {close}, Buy Vol: {buy_vol}, Sell Vol: {sell_vol}".format(
                 time=ts.ctime(),
                 symbol=candle.symbol,
                 exchange=candle.exchange.upper(),
                 high=candle.high,
                 low=candle.low,
                 open=candle.open,
-                close=candle.close
+                close=candle.close,
+                buy_vol=candle.total_buy_vol,
+                sell_vol=candle.total_sell_vol
             )
         )
 
@@ -50,18 +53,7 @@ class StrategyA(engine.BaseEngine):
             self.schedule.distribute(self.trend.middle_watch, self.trend.curr_price)
 
     def candle_update(self, candle):
-        self.trend.tick(self.candle.candles)
-        self.schedule.tick(self.trend.curr_price)
-
-        inputs = indicator.gen_inputs(self.candle.candles)
-        rsi_result = indicator.rsi(inputs)
-
-        if rsi_result == 1:
-            logger.debug('RSI {}: buying'.format(rsi_result))
-            self.schedule.allocate(self.trend.middle_watch, self.trend.curr_price)
-        elif rsi_result == -1:
-            logger.debug('RSI {}: selling'.format(rsi_result))
-            self.schedule.distribute(self.trend.middle_watch, self.trend.curr_price)
+        pass
 
     def trend_up(self):
         logger.debug('trend_up: {} > {} - TP: {}'.format(

@@ -58,6 +58,16 @@ class BaseEngine(object):
                 .limit(history_count):
             yield trade
 
+    @staticmethod
+    def get_volume(trade):
+        buy_vol = 0
+        sell_vol = 0
+        if trade.type == 'BUY':
+            buy_vol = trade.quantity
+        elif trade.type == 'SELL':
+            sell_vol = trade.quantity
+        return buy_vol, sell_vol
+
     async def run(self, interval, history_count, pauses=0, stop_at=None, test=False):
         """
         Main loop for candle generation and event handling
@@ -74,15 +84,18 @@ class BaseEngine(object):
         logger.info('get trade history for {}-{}'.format(self.symbol, self.exchange_id))
 
         counter = 0
-        for price in self.get_trade_history(history_count):
-            timestamp = time.mktime(price.time.timetuple())
-            self.candle.tick(timestamp_seconds=timestamp, price=price.price)
+        for trade in self.get_trade_history(history_count):
+            timestamp = time.mktime(trade.time.timetuple())
+
+            buy_vol, sell_vol = self.get_volume(trade)
+
+            self.candle.tick(timestamp_seconds=timestamp, price=trade.price, buy_vol=buy_vol, sell_vol=sell_vol)
             counter += 1
             if pauses:
                 if counter % pauses == 0:
                     input('{} loops, press return to continue'.format(counter))
             if stop_at:
-                if price.time >= stop_at:
+                if trade.time >= stop_at:
                     return
 
         logger.info('completed trade history for {}-{}'.format(self.symbol, self.exchange_id))
@@ -94,14 +107,17 @@ class BaseEngine(object):
             logger.info('monitoring {}-{}'.format(self.symbol, self.exchange_id))
             while True:
                 now = datetime.utcnow()
-                for price in self.db_session.query(Trades) \
+                for trade in self.db_session.query(Trades) \
                         .filter(Trades.symbol == self.symbol) \
                         .filter(Trades.exchange == self.exchange_id) \
                         .filter(Trades.created_at > now - timedelta(seconds=interval)) \
                         .order_by(Trades.time):
 
-                    timestamp = time.mktime(price.time.timetuple())
-                    self.candle.tick(timestamp_seconds=timestamp, price=price.price)
+                    timestamp = time.mktime(trade.time.timetuple())
+
+                    buy_vol, sell_vol = self.get_volume(trade)
+
+                    self.candle.tick(timestamp_seconds=timestamp, price=trade.price, buy_vol=buy_vol, sell_vol=sell_vol)
 
                 await asyncio.sleep(interval)
 
