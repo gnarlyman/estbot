@@ -32,6 +32,7 @@ class BaseEngine(object):
         self.coin, self.base = symbol.split('/')
         self.exchange_id = exchange_id
         self.config = config
+        self.logger_extra = dict(symbol=self.symbol, exchange_id=self.exchange_id)
 
         self.period_seconds = int(self.config['symbols'][symbol]['candle_period_seconds'])
         self.partition_trends = int(self.config['symbols'][symbol].get('partition_trends', 0))
@@ -82,9 +83,9 @@ class BaseEngine(object):
         performing X loops before waiting for user input
         :return:
         """
-        logger.debug('{}-{} engine started'.format(self.symbol, self.exchange_id))
+        logger.debug('engine started', extra=self.logger_extra)
 
-        logger.info('get trade history for {}-{}'.format(self.symbol, self.exchange_id))
+        logger.info('get trade history', extra=self.logger_extra)
 
         counter = 0
         for trade in self.get_trade_history(history_count):
@@ -101,13 +102,13 @@ class BaseEngine(object):
                 if trade.time >= stop_at:
                     return
 
-        logger.info('completed trade history for {}-{}'.format(self.symbol, self.exchange_id))
+        logger.info('completed trade history', extra=self.logger_extra)
 
         # we're done backfilling
         self.backfill = False
 
         if not test:
-            logger.info('monitoring {}-{}'.format(self.symbol, self.exchange_id))
+            logger.info('monitoring', extra=self.logger_extra)
             while True:
                 now = datetime.utcnow()
                 for trade in self.db_session.query(Trades) \
@@ -125,7 +126,7 @@ class BaseEngine(object):
                 await asyncio.sleep(interval)
 
     def get_exchange(self):
-        return core.exchange.ExchangeLimiter(self.exchange_id, self.api_key, self.api_secret, rate_limit_seconds=1)
+        return core.exchange.ExchangeLimiter(self.symbol, self.exchange_id, self.api_key, self.api_secret, rate_limit_seconds=1)
 
     def get_candle_manager(self):
         cm = core.candle.CandleManager(self.symbol, self.exchange_id, self.period_seconds)
@@ -137,6 +138,8 @@ class BaseEngine(object):
 
     def get_trend_manager(self):
         tm = core.trend.TrendManager(
+            self.symbol,
+            self.exchange_id,
             trends=self.trends,
             partition_trends=self.partition_trends
         )
@@ -154,6 +157,8 @@ class BaseEngine(object):
         trade = core.trade.TradeManager(
             base=self.base,
             coin=self.coin,
+            symbol=self.symbol,
+            exchange_id=self.exchange_id,
             exchange=self.exchange,
             position_size=self.position_size,
             paper=self.paper
@@ -163,8 +168,11 @@ class BaseEngine(object):
 
     def get_schedule_manager(self):
         schedule = core.schedule.ScheduleManager(
+            symbol=self.symbol,
+            exchange_id=self.exchange_id,
             trade=self.trade,
-            frequency=self.trade_frequency)
+            frequency=self.trade_frequency
+        )
 
         return schedule
 

@@ -6,7 +6,7 @@ logger = logging.getLogger(__name__)
 
 
 class TradeManager(object):
-    def __init__(self, base, coin, exchange, position_size, paper=False):
+    def __init__(self, base, coin, symbol, exchange_id, exchange, position_size, paper=False):
         """
         Tracks a specific Long or Short trade. Executes trades under optimal conditions, such as a retracement.
         Only one trade is tracked. If subsequent trades are added, they will be merged into the active trade.
@@ -15,10 +15,16 @@ class TradeManager(object):
 
         :param base: symbol for base currency (e.g. USD)
         :param coin: symbol for market currency (e.g. BTC)
+        :param symbol: coin/base pair
+        :param exchange_id: the identifier of the exchange
         :param exchange: core.exchangelimiter object for the exchange we want to trade
         :param position_size: how large is one position (in base currency)? (e.g. 0.001 BASE)
         :param paper: true means we don't really trade, only on paper
         """
+
+        self.symbol = symbol
+        self.exchange_id = exchange_id
+        self.logger_extra = dict(symbol=self.symbol, exchange_id=self.exchange_id)
 
         self.base = base
         self.coin = coin
@@ -32,7 +38,7 @@ class TradeManager(object):
         self.active_trade = None
 
     def long(self, price):
-        logger.debug('received Long request at {}'.format(price))
+        logger.debug('received Long request at {}'.format(price), extra=self.logger_extra)
 
         long = Long(
             exchange=self.exchange,
@@ -50,7 +56,7 @@ class TradeManager(object):
             self.active_trade = long
 
     def short(self, price):
-        logger.debug('received Short request at {}'.format(price))
+        logger.debug('received Short request at {}'.format(price), extra=self.logger_extra)
 
         short = Short(
             exchange=self.exchange,
@@ -77,7 +83,11 @@ class TradeManager(object):
 
 class Trade(object):
 
-    def __init__(self, exchange, base, coin, position_size, paper, retrace_percent, price):
+    def __init__(self, symbol, exchange_id, exchange, base, coin, position_size, paper, retrace_percent, price):
+        self.symbol = symbol
+        self.exchange_id = exchange_id
+        self.logger_extra = dict(symbol=self.symbol, exchange_id=self.exchange_id)
+
         self.base = base
         self.coin = coin
         self.paper = paper
@@ -104,7 +114,7 @@ class Trade(object):
         self.executed = True
         logger.info('executing trade {}: Orig: {}, Low: {}, High: {}, Current: {} -- Size: {}'.format(
             self, self.orig, self.low, self.high, self.current, self.position_size
-        ))
+        ), extra=self.logger_extra)
 
     def eval_price(self):
         raise NotImplementedError()
@@ -118,10 +128,10 @@ class Long(Trade):
     def eval_price(self):
         logger.debug('long eval {}: Orig: {}, Low: {}, High: {}, Current: {}'.format(
             self, self.orig, self.low, self.high, self.current
-        ))
+        ), extra=self.logger_extra)
         if self.high > self.current:
             target = self.low + (self.retrace_percent * (self.orig - self.low))
-            logger.debug('long Target: {}, Current: {}'.format(target, self.current))
+            logger.debug('long Target: {}, Current: {}'.format(target, self.current), extra=self.logger_extra)
             if self.current > target:
                 self.execute()
 
@@ -137,10 +147,10 @@ class Short(Trade):
     def eval_price(self):
         logger.debug('short eval {}: Orig: {}, Low: {}, High: {}, Current: {}'.format(
             self, self.orig, self.low, self.high, self.current
-        ))
+        ), extra=self.logger_extra)
         if self.low < self.current:
             target = self.high - (self.retrace_percent * (self.high - self.orig))
-            logger.debug('short Target: {}, Current: {}'.format(target, self.current))
+            logger.debug('short Target: {}, Current: {}'.format(target, self.current), extra=self.logger_extra)
             if self.current < target:
                 self.execute()
 

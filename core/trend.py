@@ -5,7 +5,7 @@ logger = logging.getLogger(__name__)
 
 
 class TrendManager(object):
-    def __init__(self, trends, partition_trends=0):
+    def __init__(self, symbol, exchange_id, trends, partition_trends=0):
         """
         :param partition_trends: how many trends to fill in gaps
         :param trends: historical or estimated support/resistence lines
@@ -17,6 +17,8 @@ class TrendManager(object):
                 3500: 80
             }
         """
+        self.logger_extra = dict(symbol=symbol, exchange_id=exchange_id)
+
         self.partition_trends = int(partition_trends)
         self.trends = self._get_trends(trends)
 
@@ -46,7 +48,8 @@ class TrendManager(object):
                 trend = t
                 perc = p
 
-        logger.debug("processed trends: {}".format(sorted(trends.items(), key=lambda k: int(k[0]))))
+        logger.debug("processed trends: {}".format(sorted(trends.items(), key=lambda k: int(k[0]))),
+                     extra=self.logger_extra)
         return trends
 
     def tick(self, candles):
@@ -95,7 +98,7 @@ class TrendManager(object):
             self.upper_watch,
             self.lower_watch,
             self.curr_trend_price
-        ))
+        ), extra=self.logger_extra)
 
     def trigger(self, event):
         if event in self.callbacks:

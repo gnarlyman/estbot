@@ -8,14 +8,16 @@ class CandleManager(object):
     Groups price data into time-chunks (candles) based on period_seconds.
     """
 
-    def __init__(self, symbol, exchange, period_seconds):
+    def __init__(self, symbol, exchange_id, period_seconds):
         """
         :param symbol: COIN/BASE symbol for the market.
         :param exchange: ccxt exchange object id
         :param period_seconds: the candlestick period in seconds
         """
         self.symbol = symbol
-        self.exchange = exchange
+        self.exchange_id = exchange_id
+        self.logger_extra = dict(symbol=self.symbol, exchange_id=self.exchange_id)
+
         self.period_seconds = period_seconds
         self.curr_candle = None
         self.candles = list()
@@ -35,7 +37,7 @@ class CandleManager(object):
         time_round = int(timestamp_seconds / self.period_seconds) * self.period_seconds
 
         if not self.curr_candle:
-            self.curr_candle = Candle(self.symbol, self.exchange, time_round, price, buy_vol, sell_vol)
+            self.curr_candle = Candle(self.symbol, self.exchange_id, time_round, price, buy_vol, sell_vol)
             self.candles.append(self.curr_candle)
             self.trigger('candle_open', self.curr_candle)
 
@@ -45,7 +47,7 @@ class CandleManager(object):
 
         else:
             self.trigger('candle_close', self.curr_candle)
-            self.curr_candle = Candle(self.symbol, self.exchange, time_round, price, buy_vol, sell_vol)
+            self.curr_candle = Candle(self.symbol, self.exchange_id, time_round, price, buy_vol, sell_vol)
             self.candles.append(self.curr_candle)
             self.trigger('candle_open', self.curr_candle)
 
@@ -61,7 +63,7 @@ class Candle(object):
     """
     Represents a Candle. Tracks key points during a candle's lifetime.
     """
-    def __init__(self, symbol, exchange, time, start_price, sell_vol, buy_vol):
+    def __init__(self, symbol, exchange_id, time, start_price, sell_vol, buy_vol):
         """
         :param symbol:  COIN/BASE symbol for the market.
         :param exchange: ccxt exchange object id
@@ -69,7 +71,9 @@ class Candle(object):
         :param start_price: the inital price of the candle
         """
         self.symbol = symbol
-        self.exchange = exchange
+        self.exchange_id = exchange_id
+        self.logger_extra = dict(symbol=self.symbol, exchange_id=self.exchange_id)
+
         self.time = time
         self.open = start_price
         self.high = start_price
@@ -82,7 +86,7 @@ class Candle(object):
         """update high, low and close values and add to volume"""
         logger.debug('candle_update Price: {}, Sell: {}, Buy: {}'.format(
             price, sell_vol, buy_vol
-        ))
+        ), extra=self.logger_extra)
         if price > self.high:
             self.high = price
         if price < self.low:

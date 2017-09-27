@@ -5,12 +5,16 @@ logger = logging.getLogger(__name__)
 
 class ScheduleManager(object):
 
-    def __init__(self, trade, frequency):
+    def __init__(self, symbol, exchange_id, trade, frequency):
         """
         Manages schedules, prevents duplicate schedule, and expires invalid schedules.
 
         :param trade: core.trade.TradeManager object
         """
+        self.symbol = symbol
+        self.exchange_id = exchange_id
+        self.logger_extra = dict(symbol=self.symbol, exchange_id=self.exchange_id)
+
         self.trade = trade
         self.frequency = frequency
 
@@ -22,6 +26,8 @@ class ScheduleManager(object):
         if trend_price not in self.allocations:
             self.allocations.update({
                 trend_price: Allocation(
+                    self.symbol,
+                    self.exchange_id,
                     self.trade,
                     trend_price,
                     curr_price,
@@ -33,7 +39,7 @@ class ScheduleManager(object):
                 'created allocation schedule: Price: {}, '
                 'Trend: {}, Pos Count: {}'.format(
                     curr_price, trend_price, position_count
-                )
+                ), extra=self.logger_extra
             )
 
     def distribute(self, trend_price, curr_price):
@@ -41,6 +47,8 @@ class ScheduleManager(object):
         if trend_price not in self.distributions:
             self.distributions.update({
                 trend_price: Distribution(
+                    self.symbol,
+                    self.exchange_id,
                     self.trade,
                     trend_price,
                     curr_price,
@@ -52,7 +60,7 @@ class ScheduleManager(object):
                 'created distribution schedule: Price: {}, '
                 'Trend: {}, Pos Count: {}'.format(
                     curr_price, trend_price, position_count
-                )
+                ), extra=self.logger_extra
             )
 
     def tick(self, price):
@@ -79,12 +87,12 @@ class ScheduleManager(object):
         if len(self.allocations) or len(self.distributions):
             logger.info('Allocation Schedules: {}, Distribution Schedules: {}'.format(
                 len(self.allocations), len(self.distributions)
-            ))
+            ), extra=self.logger_extra)
 
 
 class Schedule(object):
 
-    def __init__(self, trade, trend_price, curr_price, position_count, frequency):
+    def __init__(self, symbol, exchange_id, trade, trend_price, curr_price, position_count, frequency):
         """
         Schedule trades over time.
 
@@ -93,6 +101,9 @@ class Schedule(object):
         :param position_count: the number of positions to execute
         :param frequency: how often to execute schedules (in ticks)
         """
+        self.symbol = symbol
+        self.exchange_id = exchange_id
+        self.logger_extra = dict(symbol=self.symbol, exchange_id=self.exchange_id)
 
         self.trade = trade
         self.trend_price = trend_price
@@ -107,13 +118,13 @@ class Schedule(object):
         logger.debug('cancelling {}-{} {}/{} from trend: {}'.format(
             self.__class__, self.start_price, self.positions_executed, self.position_count,
             self.trend_price
-        ))
+        ), extra=self.logger_extra)
 
     def done(self):
         logger.debug('finished {}-{} {}/{} from trend: {}'.format(
             self.__class__, self.start_price, self.positions_executed, self.position_count,
             self.trend_price
-        ))
+        ), extra=self.logger_extra)
 
     def tick(self, price):
         self.counter += 1
@@ -122,7 +133,7 @@ class Schedule(object):
             logger.debug('executing {}-{} {}/{} at price: {}, trend: {}'.format(
                 self, self.start_price, self.positions_executed, self.position_count,
                 price, self.trend_price
-            ))
+            ), extra=self.logger_extra)
             self.execute(price)
         self.trade.tick(price)
 
