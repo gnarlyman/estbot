@@ -51,15 +51,18 @@ class BaseEngine(object):
         self.backfill = True
 
     def get_trade_history(self, history_count):
-        for trade in self.db_session.query(Trades) \
-                .filter(Trades.symbol == self.symbol) \
-                .filter(Trades.exchange == self.exchange_id) \
-                .order_by(Trades.time) \
-                .limit(history_count):
+        query = self.db_session.query(Trades)\
+            .filter(Trades.symbol == self.symbol)\
+            .filter(Trades.exchange == self.exchange_id)\
+            .order_by(Trades.time.desc())\
+            .limit(history_count)
+
+        for trade in reversed([i for i in query]):
             yield trade
 
     @staticmethod
     def get_volume(trade):
+
         buy_vol = 0
         sell_vol = 0
         if trade.type == 'BUY':

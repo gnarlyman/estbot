@@ -14,17 +14,18 @@ class StrategyA(engine.BaseEngine):
     """
 
     def candle_open(self, candle):
-        logger.debug('candle_open {}'.format(candle.time))
+        ts = datetime.fromtimestamp(candle.time)
+        logger.debug('candle_open {:%m-%d-%Y %H:%M:%S}'.format(ts))
 
     def candle_close(self, candle):
-        logger.debug('candle_close {}'.format(candle.time))
+        ts = datetime.fromtimestamp(candle.time)
+        logger.debug('candle_close {:%m-%d-%Y %H:%M:%S}'.format(ts))
         self.trend.tick(self.candle.candles)
 
-        ts = datetime.fromtimestamp(candle.time)
         logger.debug(
-            "{time} CLOSE {symbol}-{exchange}, High: {high}, Low: {low}, "
+            "{time:%m-%d-%Y %H:%M:%S} CLOSE {symbol}-{exchange}, High: {high}, Low: {low}, "
             "Open: {open}, Close: {close}, Buy Vol: {buy_vol}, Sell Vol: {sell_vol}".format(
-                time=ts.ctime(),
+                time=ts,
                 symbol=candle.symbol,
                 exchange=candle.exchange.upper(),
                 high=candle.high,
@@ -40,16 +41,15 @@ class StrategyA(engine.BaseEngine):
         rsi_result = indicator.rsi(inputs)
         macd_result = indicator.macd_crossing(inputs)
 
-        logger.debug('RSI: {}'.format(rsi_result))
-        logger.debug('MACD: {}'.format(macd_result))
+        logger.debug('RSI: {}, MACD: {}'.format(rsi_result, macd_result))
 
-        logger.debug("trends: {}".format(sorted(self.trend.trends.items(), key=lambda k: int(k[0]))))
+        # logger.debug("trends: {}".format(sorted(self.trend.trends.items(), key=lambda k: int(k[0]))))
 
         if rsi_result == 1:
-            logger.debug('RSI {}: buying'.format(rsi_result))
+            # logger.debug('RSI {}: buying'.format(rsi_result))
             self.schedule.allocate(self.trend.middle_watch, self.trend.curr_price)
         elif rsi_result == -1:
-            logger.debug('RSI {}: selling'.format(rsi_result))
+            # logger.debug('RSI {}: selling'.format(rsi_result))
             self.schedule.distribute(self.trend.middle_watch, self.trend.curr_price)
 
     def candle_update(self, candle):
