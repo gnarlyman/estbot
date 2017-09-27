@@ -21,6 +21,7 @@ class StrategyA(engine.BaseEngine):
         ts = datetime.fromtimestamp(candle.time)
         logger.debug('candle_close {:%m-%d-%Y %H:%M:%S}'.format(ts))
         self.trend.tick(self.candle.candles)
+        self.schedule.tick(self.trend.curr_price)
 
         logger.debug(
             "{time:%m-%d-%Y %H:%M:%S} CLOSE {symbol}-{exchange}, High: {high}, Low: {low}, "
@@ -42,15 +43,6 @@ class StrategyA(engine.BaseEngine):
         macd_result = indicator.macd_crossing(inputs)
 
         logger.debug('RSI: {}, MACD: {}'.format(rsi_result, macd_result))
-
-        # logger.debug("trends: {}".format(sorted(self.trend.trends.items(), key=lambda k: int(k[0]))))
-
-        if rsi_result == 1:
-            # logger.debug('RSI {}: buying'.format(rsi_result))
-            self.schedule.allocate(self.trend.middle_watch, self.trend.curr_price)
-        elif rsi_result == -1:
-            # logger.debug('RSI {}: selling'.format(rsi_result))
-            self.schedule.distribute(self.trend.middle_watch, self.trend.curr_price)
 
     def candle_update(self, candle):
         pass
@@ -79,11 +71,19 @@ class StrategyA(engine.BaseEngine):
     def trend_price_up(self):
         logger.debug('trend_price_up: {}'.format(self.trend.curr_trend_price))
 
+        self.schedule.distribute(self.trend.middle_watch, self.trend.curr_price)
+
     def trend_price_down(self):
         logger.debug('trend_price_down: {}'.format(self.trend.curr_trend_price))
+
+        self.schedule.allocate(self.trend.middle_watch, self.trend.curr_price)
 
     def trend_retrace_up(self):
         logger.debug('trend_retrace_up: {} > {}'.format(self.trend.curr_price, self.trend.curr_trend_price))
 
+        self.schedule.distribute(self.trend.middle_watch, self.trend.curr_price)
+
     def trend_retrace_down(self):
         logger.debug('trend_retrace_down: {} < {}'.format(self.trend.curr_price, self.trend.curr_trend_price))
+
+        self.schedule.allocate(self.trend.middle_watch, self.trend.curr_price)

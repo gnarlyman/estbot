@@ -25,7 +25,7 @@ async def main():
             eng = strategy.StrategyA(db_session, symbol, options['exchange'], config)
             engines.append(eng.run(
                 interval=1,
-                history_count=10000,
+                history_count=50000,
                 #stop_at=datetime.strptime("Wed Sep 13 07:05:00 2017", "%a %b %d %H:%M:%S %Y")
             ))
 
