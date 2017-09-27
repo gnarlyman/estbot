@@ -23,6 +23,14 @@ class StrategyA(engine.BaseEngine):
         self.trend.tick(self.candle.candles)
         self.schedule.tick(self.trend.curr_price)
 
+        if len(self.candle.candles) > 5:
+            sell_inputs = indicator.gen_inputs(self.candle.candles, 'total_sell_vol')
+            buy_inputs = indicator.gen_inputs(self.candle.candles, 'total_buy_vol')
+            sell_ema = indicator.ema(sell_inputs, 'total_sell_vol')
+            buy_ema = indicator.ema(buy_inputs, 'total_buy_vol')
+
+            logger.debug('BUY_VOL_EMA: {}, SELL_VOL_EMA: {}'.format(buy_ema[-1], sell_ema[-1]))
+
         logger.debug(
             "{time:%m-%d-%Y %H:%M:%S} CLOSE {symbol}-{exchange}, High: {high}, Low: {low}, "
             "Open: {open}, Close: {close}, Buy Vol: {buy_vol}, Sell Vol: {sell_vol}".format(
@@ -37,12 +45,6 @@ class StrategyA(engine.BaseEngine):
                 sell_vol=candle.total_sell_vol
             )
         )
-
-        inputs = indicator.gen_inputs(self.candle.candles)
-        rsi_result = indicator.rsi(inputs)
-        macd_result = indicator.macd_crossing(inputs)
-
-        logger.debug('RSI: {}, MACD: {}'.format(rsi_result, macd_result))
 
     def candle_update(self, candle):
         pass
@@ -71,19 +73,11 @@ class StrategyA(engine.BaseEngine):
     def trend_price_up(self):
         logger.debug('trend_price_up: {}'.format(self.trend.curr_trend_price))
 
-        self.schedule.distribute(self.trend.middle_watch, self.trend.curr_price)
-
     def trend_price_down(self):
         logger.debug('trend_price_down: {}'.format(self.trend.curr_trend_price))
-
-        self.schedule.allocate(self.trend.middle_watch, self.trend.curr_price)
 
     def trend_retrace_up(self):
         logger.debug('trend_retrace_up: {} > {}'.format(self.trend.curr_price, self.trend.curr_trend_price))
 
-        self.schedule.distribute(self.trend.middle_watch, self.trend.curr_price)
-
     def trend_retrace_down(self):
         logger.debug('trend_retrace_down: {} < {}'.format(self.trend.curr_price, self.trend.curr_trend_price))
-
-        self.schedule.allocate(self.trend.middle_watch, self.trend.curr_price)

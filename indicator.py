@@ -2,9 +2,9 @@ import talib.abstract
 import numpy as np
 
 
-def gen_inputs(candles):
+def gen_inputs(candles, field):
     inputs = dict()
-    inputs['close'] = np.array([c.close for c in candles])
+    inputs[field] = np.array([getattr(c, field) for c in candles])
     return inputs
 
 
@@ -33,3 +33,10 @@ def macd_crossing(inputs, fastperiod=12, slowperiod=26, signalperiod=9):
     elif mh2 < 0 < mh1:
         return 1
     return 0
+
+
+def ema(inputs, field, timeperiod=10):
+    ema_result = talib.abstract.EMA(
+        inputs, timeperiod=timeperiod, price=field
+    )
+    return ema_result
