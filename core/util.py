@@ -12,8 +12,12 @@ def find_between(goal, counts, offset=0):
     return result
 
 
+def percent_of_min_max_reversed(min_val, max_val, val):
+    return ((max_val - val) / (max_val - min_val)) * 100
+
+
 def get_trends_from_config(trend_config):
-    return dict(list(map(lambda s: map(lambda ss: float(ss), s.strip().split(':')), trend_config.split(','))))
+    return list(map(lambda t: float(t), trend_config.split(',')))
 
 
 def config_to_dict(confparser):

@@ -12,9 +12,7 @@ api_secret = <api secret>
 [symbol:BTRX:BTC/USDT]
 monitor = 1
 trade = 1
-position = 4224
-trends = 5291:0,4939:20,4598:35,4224:50,3896:65,3605:80,3210:100
-partition_trends = 3
+trends = 5291,4939,4598,4224,3896,3605,3210
 position_size = 0.001
 paper = True
 candle_period_seconds = 300

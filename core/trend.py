@@ -5,21 +5,16 @@ logger = logging.getLogger(__name__)
 
 
 class TrendManager(object):
-    def __init__(self, symbol, exchange_id, trends, partition_trends=0):
+    def __init__(self, symbol, exchange_id, trends):
         """
-        :param partition_trends: how many trends to fill in gaps
+        :param symbol: COIN/BASE symbol for the market.
+        :param exchange_id: coinigy exchange id
         :param trends: historical or estimated support/resistence lines
             key: price location in market
             value: percentage of COIN investment
-            Example: {
-                4500: 20
-                4000: 50
-                3500: 80
-            }
+            Example: (4500, 4000, 3500)
         """
         self.logger_extra = dict(symbol=symbol, exchange_id=exchange_id)
-
-        self.partition_trends = int(partition_trends)
         self.trends = self._get_trends(trends)
 
         self.curr_price = None
@@ -33,24 +28,14 @@ class TrendManager(object):
         self.callbacks = dict()
 
     def _get_trends(self, trends):
-        if self.partition_trends > 1:
-            trend = None
-            perc = None
-            for t in list(trends):
-                p = trends[t]
-                if trend:
-                    tspread = abs(trend - t) / self.partition_trends
-                    pspread = abs(perc - p) / self.partition_trends
-                    for i in range(self.partition_trends):
-                        trends.update({
-                            t + (tspread * i): p - (pspread * i)
-                        })
-                trend = t
-                perc = p
+        trends_percent = dict()
+        min_t, max_t = (min(trends), max(trends))
+        for t in trends:
+            trends_percent.update({t: util.percent_of_min_max_reversed(min_t, max_t, t)})
 
-        logger.debug("processed trends: {}".format(sorted(trends.items(), key=lambda k: int(k[0]))),
+        logger.debug("processed trends: {}".format(sorted(trends_percent.items(), key=lambda k: int(k[0]))),
                      extra=self.logger_extra)
-        return trends
+        return trends_percent
 
     def tick(self, candles):
         self.prev_price = self.curr_price
