@@ -121,7 +121,9 @@ class BaseEngine(object):
                 await asyncio.sleep(interval)
 
     def get_exchange(self):
-        return core.exchange.ExchangeLimiter(self.symbol, self.exchange_id, self.api_key, self.api_secret, rate_limit_seconds=1)
+        return core.exchange.ExchangeLimiter(
+            self.symbol, self.exchange_id, self.api_key, self.api_secret, rate_limit_seconds=1
+        )
 
     def get_candle_manager(self):
         cm = core.candle.CandleManager(self.symbol, self.exchange_id, self.period_seconds)

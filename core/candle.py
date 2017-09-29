@@ -1,5 +1,6 @@
 import time
 import logging
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +41,9 @@ class CandleManager(object):
         timestamp_seconds = time.mktime(timestamp.timetuple())
         time_round = int(timestamp_seconds / self.period_seconds) * self.period_seconds
 
+        self.curr_candle_time = datetime.fromtimestamp(time_round)
+        self.logger_extra['candle_time'] = self.curr_candle_time
+
         if not self.curr_candle:
             self.curr_candle = Candle(self.symbol, self.exchange_id, time_round, price, buy_vol, sell_vol)
             self.candles.append(self.curr_candle)
@@ -54,9 +58,6 @@ class CandleManager(object):
             self.curr_candle = Candle(self.symbol, self.exchange_id, time_round, price, buy_vol, sell_vol)
             self.candles.append(self.curr_candle)
             self.trigger('candle_open', self.curr_candle)
-
-        self.curr_candle_time = timestamp
-        self.logger_extra['candle_time'] = self.curr_candle_time
 
     def trigger(self, event, candle):
         if event in self.callbacks:
