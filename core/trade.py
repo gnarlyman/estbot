@@ -41,6 +41,8 @@ class TradeManager(object):
         logger.debug('received Long request at {}'.format(price), extra=self.logger_extra)
 
         long = Long(
+            symbol=self.symbol,
+            exchange_id=self.exchange_id,
             exchange=self.exchange,
             base=self.base,
             coin=self.coin,
@@ -59,6 +61,8 @@ class TradeManager(object):
         logger.debug('received Short request at {}'.format(price), extra=self.logger_extra)
 
         short = Short(
+            symbol=self.symbol,
+            exchange_id=self.exchange_id,
             exchange=self.exchange,
             base=self.base,
             coin=self.coin,
