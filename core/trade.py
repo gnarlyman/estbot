@@ -77,9 +77,11 @@ class TradeManager(object):
         else:
             self.active_trade = short
 
-    def tick(self, price):
+    def tick(self, price, latest_candle_time):
+        self.logger_extra.update(dict(candle_time=latest_candle_time))
+
         if self.active_trade:
-            self.active_trade.tick(price)
+            self.active_trade.tick(price, latest_candle_time)
 
             if self.active_trade.executed:
                 self.active_trade = None
@@ -105,7 +107,9 @@ class Trade(object):
         self.low = price
         self.current = price
 
-    def tick(self, price):
+    def tick(self, price, latest_candle_time):
+        self.logger_extra.update(dict(candle_time=latest_candle_time))
+
         if price > self.high:
             self.high = price
         elif price < self.low:

@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import time
 from datetime import datetime, timedelta
 
 import core.candle
@@ -32,7 +31,7 @@ class BaseEngine(object):
         self.coin, self.base = symbol.split('/')
         self.exchange_id = exchange_id
         self.config = config
-        self.logger_extra = dict(symbol=self.symbol, exchange_id=self.exchange_id)
+        self.logger_extra = dict(symbol=self.symbol, exchange_id=self.exchange_id, candle_time=None)
 
         self.period_seconds = int(self.config['symbols'][symbol]['candle_period_seconds'])
         self.trends = self.config['symbols'][symbol]['trends']
@@ -88,11 +87,10 @@ class BaseEngine(object):
 
         counter = 0
         for trade in self.get_trade_history(history_count):
-            timestamp = time.mktime(trade.time.timetuple())
 
             buy_vol, sell_vol = self.get_volume(trade)
 
-            self.candle.tick(timestamp_seconds=timestamp, price=trade.price, buy_vol=buy_vol, sell_vol=sell_vol)
+            self.candle.tick(timestamp=trade.time, price=trade.price, buy_vol=buy_vol, sell_vol=sell_vol)
             counter += 1
             if pauses:
                 if counter % pauses == 0:
@@ -116,11 +114,9 @@ class BaseEngine(object):
                         .filter(Trades.created_at > now - timedelta(seconds=interval)) \
                         .order_by(Trades.time):
 
-                    timestamp = time.mktime(trade.time.timetuple())
-
                     buy_vol, sell_vol = self.get_volume(trade)
 
-                    self.candle.tick(timestamp_seconds=timestamp, price=trade.price, buy_vol=buy_vol, sell_vol=sell_vol)
+                    self.candle.tick(timestamp=trade.time, price=trade.price, buy_vol=buy_vol, sell_vol=sell_vol)
 
                 await asyncio.sleep(interval)
 

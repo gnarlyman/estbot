@@ -14,7 +14,7 @@ class TrendManager(object):
             value: percentage of COIN investment
             Example: (4500, 4000, 3500)
         """
-        self.logger_extra = dict(symbol=symbol, exchange_id=exchange_id)
+        self.logger_extra = dict(symbol=symbol, exchange_id=exchange_id, candle_time=None)
         self.trends = self._get_trends(trends)
 
         self.curr_price = None
@@ -37,7 +37,9 @@ class TrendManager(object):
                      extra=self.logger_extra)
         return trends_percent
 
-    def tick(self, candles):
+    def tick(self, candles, latest_candle_time):
+        self.logger_extra.update(dict(candle_time=latest_candle_time))
+
         self.prev_price = self.curr_price
         self.curr_price = candles[-1].close
 

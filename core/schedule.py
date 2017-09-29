@@ -17,12 +17,20 @@ class ScheduleManager(object):
 
         self.trade = trade
         self.frequency = frequency
+        self.initial_position_count = 3
 
         self.allocations = dict()
         self.distributions = dict()
 
-    def allocate(self, trend_price, curr_price):
-        position_count = 3
+    def get_position_count(self):
+        count = len(self.allocations) + len(self.distributions)
+        if not count:
+            return self.initial_position_count
+        else:
+            return count * self.initial_position_count
+
+    def allocate(self, trend_price, curr_price, candle_time):
+        position_count = self.get_position_count()
         if trend_price not in self.allocations:
             self.allocations.update({
                 trend_price: Allocation(
@@ -42,8 +50,8 @@ class ScheduleManager(object):
                 ), extra=self.logger_extra
             )
 
-    def distribute(self, trend_price, curr_price):
-        position_count = 3
+    def distribute(self, trend_price, curr_price, candle_time):
+        position_count = self.get_position_count()
         if trend_price not in self.distributions:
             self.distributions.update({
                 trend_price: Distribution(
@@ -63,7 +71,9 @@ class ScheduleManager(object):
                 ), extra=self.logger_extra
             )
 
-    def tick(self, price):
+    def tick(self, price, latest_candle_time):
+        self.logger_extra.update(dict(candle_time=latest_candle_time))
+
         for allocation in list(self.allocations.values()):
             if price > allocation.start_price:
                 allocation.cancel()
@@ -72,7 +82,7 @@ class ScheduleManager(object):
                 allocation.done()
                 self.allocations.pop(allocation.trend_price)
             else:
-                allocation.tick(price)
+                allocation.tick(price, latest_candle_time)
 
         for distribution in list(self.distributions.values()):
             if price < distribution.start_price:
@@ -82,7 +92,7 @@ class ScheduleManager(object):
                 distribution.done()
                 self.distributions.pop(distribution.trend_price)
             else:
-                distribution.tick(price)
+                distribution.tick(price, latest_candle_time)
 
         if len(self.allocations) or len(self.distributions):
             logger.info('Allocation Schedules: {}, Distribution Schedules: {}'.format(
@@ -126,7 +136,9 @@ class Schedule(object):
             self.trend_price
         ), extra=self.logger_extra)
 
-    def tick(self, price):
+    def tick(self, price, latest_candle_time):
+        self.logger_extra.update(dict(candle_time=latest_candle_time))
+
         self.counter += 1
         if self.counter % self.frequency == 0:
             self.positions_executed += 1
@@ -135,7 +147,8 @@ class Schedule(object):
                 price, self.trend_price
             ), extra=self.logger_extra)
             self.execute(price)
-        self.trade.tick(price)
+
+        self.trade.tick(price, latest_candle_time)
 
     def execute(self, price):
         raise NotImplementedError()
