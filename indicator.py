@@ -8,8 +8,8 @@ def gen_inputs(candles, field):
     return inputs
 
 
-def rsi(inputs, timeperiod=14, high=70, low=30):
-    result = talib.abstract.RSI(inputs, dtype=float, price='close', timeperiod=timeperiod)[-1]
+def rsi(inputs, field, timeperiod=14, high=70, low=30):
+    result = talib.abstract.RSI(inputs, dtype=float, price=field, timeperiod=timeperiod)[-1]
     if result:
         if result < low:
             return 1
@@ -18,9 +18,9 @@ def rsi(inputs, timeperiod=14, high=70, low=30):
     return 0
 
 
-def macd_crossing(inputs, fastperiod=12, slowperiod=26, signalperiod=9):
+def macd_crossing(inputs, field, fastperiod=12, slowperiod=26, signalperiod=9):
     macd, macdsignal, macdhist = talib.abstract.MACD(
-        inputs, price='close',
+        inputs, price=field,
         fastperiod=fastperiod, slowperiod=slowperiod, signalperiod=signalperiod)
     if not len(macdhist) >= 2:
         return 0
