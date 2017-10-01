@@ -77,20 +77,20 @@ class StrategyA(engine.BaseEngine):
 
     def trend_price_up(self):
         logger.debug('trend_price_up: {}'.format(self.trend.curr_trend_price), extra=self.logger_strategy_extra)
-        self.schedule.distribute(self.trend.curr_trend_price, self.trend.curr_price, self.candle.curr_candle_time)
+        self.schedule.distribute(self.trend.curr_trend_price, self.trend.curr_price)
 
     def trend_price_down(self):
         logger.debug('trend_price_down: {}'.format(self.trend.curr_trend_price), extra=self.logger_strategy_extra)
-        self.schedule.allocate(self.trend.curr_trend_price, self.trend.curr_price, self.candle.curr_candle_time)
+        self.schedule.allocate(self.trend.curr_trend_price, self.trend.curr_price)
 
     def trend_retrace_up(self):
         logger.debug('trend_retrace_up: {} > {}'.format(
             self.trend.curr_price, self.trend.curr_trend_price
         ), extra=self.logger_strategy_extra)
-        self.schedule.allocate(self.trend.curr_trend_price, self.trend.curr_price, self.candle.curr_candle_time)
+        self.schedule.allocate(self.trend.curr_trend_price, self.trend.curr_price)
 
     def trend_retrace_down(self):
         logger.debug('trend_retrace_down: {} < {}'.format(
             self.trend.curr_price, self.trend.curr_trend_price
         ), extra=self.logger_strategy_extra)
-        self.schedule.distribute(self.trend.curr_trend_price, self.trend.curr_price, self.candle.curr_candle_time)
+        self.schedule.distribute(self.trend.curr_trend_price, self.trend.curr_price)

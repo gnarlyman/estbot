@@ -17,6 +17,7 @@ position_size = 0.001
 paper = True
 candle_period_seconds = 300
 trade_frequency = 10
+position_mult = 1
 
 [symbol:BTRX:ETH/USDT]
 monitor = 1

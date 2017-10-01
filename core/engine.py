@@ -36,6 +36,7 @@ class BaseEngine(object):
         self.period_seconds = int(self.config['symbols'][symbol]['candle_period_seconds'])
         self.trends = self.config['symbols'][symbol]['trends']
         self.position_size = float(self.config['symbols'][self.symbol]['position_size'])
+        self.position_mult = float(self.config['symbols'][self.symbol]['position_mult'])
         self.trade_frequency = int(self.config['symbols'][self.symbol]['trade_frequency'])
         self.paper = bool(self.config['symbols'][self.symbol]['paper'])
         self.api_key = self.config['coinigy']['api_key']
@@ -167,7 +168,8 @@ class BaseEngine(object):
             symbol=self.symbol,
             exchange_id=self.exchange_id,
             trade=self.trade,
-            frequency=self.trade_frequency
+            frequency=self.trade_frequency,
+            position_mult=self.position_mult
         )
         self.trade.add_schedule(schedule)
 

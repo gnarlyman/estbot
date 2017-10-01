@@ -5,7 +5,7 @@ logger = logging.getLogger(__name__)
 
 class ScheduleManager(object):
 
-    def __init__(self, symbol, exchange_id, trade, frequency):
+    def __init__(self, symbol, exchange_id, trade, frequency, position_mult):
         """
         Manages schedules, prevents duplicate schedule, and expires invalid schedules.
 
@@ -17,8 +17,10 @@ class ScheduleManager(object):
 
         self.trade = trade
         self.frequency = frequency
-        self.position_count = 1
+        self.position_mult = position_mult
         self.positions = list()
+        self.allocation_position_count = 1
+        self.distribution_position_count = 1
 
         self.profit_position = None
 
@@ -36,15 +38,16 @@ class ScheduleManager(object):
     def event_short(self, price):
         logger.debug('schedule manager received SHORT event: {}'.format(price), extra=self.logger_extra)
 
-    def get_position_count(self):
-        count = len(self.allocations) + len(self.distributions)
-        if not count:
-            return self.position_count
-        else:
-            return count * self.position_count
+    def update_allocation_position_count(self):
+        self.distribution_position_count = 1
+        self.allocation_position_count = self.allocation_position_count * self.position_mult
 
-    def allocate(self, trend_price, curr_price, candle_time):
-        position_count = self.get_position_count()
+    def update_distribution_position_count(self):
+        self.allocation_position_count = 1
+        self.distribution_position_count = self.distribution_position_count * self.position_mult
+
+    def allocate(self, trend_price, curr_price):
+        self.update_allocation_position_count()
         if trend_price not in self.allocations:
             self.allocations.update({
                 trend_price: Allocation(
@@ -53,19 +56,19 @@ class ScheduleManager(object):
                     self.trade,
                     trend_price,
                     curr_price,
-                    position_count,
+                    self.allocation_position_count,
                     self.frequency
                 )
             })
             logger.debug(
                 'created allocation schedule: Price: {}, '
                 'Trend: {}, Pos Count: {}'.format(
-                    curr_price, trend_price, position_count
+                    curr_price, trend_price, self.allocation_position_count
                 ), extra=self.logger_extra
             )
 
-    def distribute(self, trend_price, curr_price, candle_time):
-        position_count = self.get_position_count()
+    def distribute(self, trend_price, curr_price):
+        self.update_distribution_position_count()
         if trend_price not in self.distributions:
             self.distributions.update({
                 trend_price: Distribution(
@@ -74,14 +77,14 @@ class ScheduleManager(object):
                     self.trade,
                     trend_price,
                     curr_price,
-                    position_count,
+                    self.distribution_position_count,
                     self.frequency
                 )
             })
             logger.debug(
                 'created distribution schedule: Price: {}, '
                 'Trend: {}, Pos Count: {}'.format(
-                    curr_price, trend_price, position_count
+                    curr_price, trend_price, self.distribution_position_count
                 ), extra=self.logger_extra
             )
 
