@@ -25,6 +25,7 @@ class TradeManager(object):
         self.symbol = symbol
         self.exchange_id = exchange_id
         self.logger_extra = dict(symbol=self.symbol, exchange_id=self.exchange_id)
+        self.callbacks = dict()
 
         self.base = base
         self.coin = coin
@@ -32,7 +33,12 @@ class TradeManager(object):
         self.position_size = position_size
         self.paper = paper
 
+        self.schedule = None
+
         self.active_trade = None
+
+    def add_schedule(self, schedule):
+        self.schedule = schedule
 
     def cancel(self):
         self.active_trade = None
@@ -48,7 +54,7 @@ class TradeManager(object):
             coin=self.coin,
             position_size=self.position_size,
             paper=self.paper,
-            retrace_percent=0.20,
+            retrace_percent=0.2,
             price=price
         )
 
@@ -56,6 +62,7 @@ class TradeManager(object):
             self.active_trade + long
         else:
             self.active_trade = long
+            self.register_events(self.active_trade)
 
     def short(self, price):
         logger.debug('received Short request at {}'.format(price), extra=self.logger_extra)
@@ -76,6 +83,7 @@ class TradeManager(object):
             self.active_trade + short
         else:
             self.active_trade = short
+            self.register_events(self.active_trade)
 
     def tick(self, price, latest_candle_time):
         self.logger_extra.update(dict(candle_time=latest_candle_time))
@@ -86,6 +94,17 @@ class TradeManager(object):
             if self.active_trade.executed:
                 self.active_trade = None
 
+    def register_events(self, trade):
+        trade.register('execute_long', self.schedule.event_long)
+        trade.register('execute_short', self.schedule.event_short)
+
+    def trigger(self, event, price):
+        if event in self.callbacks:
+            self.callbacks[event](price)
+
+    def register(self, event, callback):
+        self.callbacks.setdefault(event, callback)
+
 
 class Trade(object):
 
@@ -93,6 +112,8 @@ class Trade(object):
         self.symbol = symbol
         self.exchange_id = exchange_id
         self.logger_extra = dict(symbol=self.symbol, exchange_id=self.exchange_id)
+        self.callbacks = dict()
+        self.type = None
 
         self.base = base
         self.coin = coin
@@ -123,6 +144,7 @@ class Trade(object):
         logger.info('executing trade {}: Orig: {}, Low: {}, High: {}, Current: {} -- Size: {}'.format(
             self, self.orig, self.low, self.high, self.current, self.position_size
         ), extra=self.logger_extra)
+        self.trigger('execute_{}'.format(self.type), self.current)
 
     def eval_price(self):
         raise NotImplementedError()
@@ -130,8 +152,19 @@ class Trade(object):
     def __add__(self, other):
         self.position_size += other.position_size
 
+    def trigger(self, event, price):
+        if event in self.callbacks:
+            self.callbacks[event](price)
+
+    def register(self, event, callback):
+        self.callbacks.setdefault(event, callback)
+
 
 class Long(Trade):
+
+    def __init__(self, *args, **kwargs):
+        super(self.__class__, self).__init__(*args, **kwargs)
+        self.type = 'long'
 
     def eval_price(self):
         logger.debug('long eval {}: Orig: {}, Low: {}, High: {}, Current: {}'.format(
@@ -151,6 +184,10 @@ class Long(Trade):
 
 
 class Short(Trade):
+
+    def __init__(self, *args, **kwargs):
+        super(self.__class__, self).__init__(*args, **kwargs)
+        self.type = 'short'
 
     def eval_price(self):
         logger.debug('short eval {}: Orig: {}, Low: {}, High: {}, Current: {}'.format(

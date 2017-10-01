@@ -169,6 +169,7 @@ class BaseEngine(object):
             trade=self.trade,
             frequency=self.trade_frequency
         )
+        self.trade.add_schedule(schedule)
 
         return schedule
 

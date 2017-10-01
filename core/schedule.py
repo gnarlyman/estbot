@@ -17,17 +17,31 @@ class ScheduleManager(object):
 
         self.trade = trade
         self.frequency = frequency
-        self.initial_position_count = 3
+        self.position_count = 1
+        self.positions = list()
+
+        self.profit_position = None
 
         self.allocations = dict()
         self.distributions = dict()
 
+    def calculate_profit_position(self):
+        if len(self.positions):
+            self.profit_position = sum(self.positions)/len(self.positions)
+
+    def event_long(self, price):
+        logger.debug('schedule manager received LONG event: {}'.format(price), extra=self.logger_extra)
+        self.positions.append(price)
+
+    def event_short(self, price):
+        logger.debug('schedule manager received SHORT event: {}'.format(price), extra=self.logger_extra)
+
     def get_position_count(self):
         count = len(self.allocations) + len(self.distributions)
         if not count:
-            return self.initial_position_count
+            return self.position_count
         else:
-            return count * self.initial_position_count
+            return count * self.position_count
 
     def allocate(self, trend_price, curr_price, candle_time):
         position_count = self.get_position_count()
@@ -98,6 +112,8 @@ class ScheduleManager(object):
             logger.info('Allocation Schedules: {}, Distribution Schedules: {}'.format(
                 len(self.allocations), len(self.distributions)
             ), extra=self.logger_extra)
+
+        self.calculate_profit_position()
 
 
 class Schedule(object):

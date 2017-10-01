@@ -23,7 +23,6 @@ class TrendManager(object):
         self.upper_watch = None
         self.lower_watch = None
         self.middle_watch = None
-        self.relative_to_middle = None
 
         self.callbacks = dict()
 
