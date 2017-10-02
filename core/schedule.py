@@ -5,7 +5,7 @@ logger = logging.getLogger(__name__)
 
 class ScheduleManager(object):
 
-    def __init__(self, symbol, exchange_id, trade, frequency, position_mult):
+    def __init__(self, symbol, exchange_id, trade, ledger, frequency, position_mult):
         """
         Manages schedules, prevents duplicate schedule, and expires invalid schedules.
 
@@ -16,6 +16,7 @@ class ScheduleManager(object):
         self.logger_extra = dict(symbol=self.symbol, exchange_id=self.exchange_id, candle_time=None)
 
         self.trade = trade
+        self.ledger = ledger
         self.frequency = frequency
         self.position_mult = position_mult
         self.allocation_positions = list()
@@ -36,10 +37,12 @@ class ScheduleManager(object):
     def event_long(self, price):
         logger.debug('schedule manager received LONG event: {}'.format(price), extra=self.logger_extra)
         self.allocation_positions.append(price)
+        self.ledger.add_long(price)
 
     def event_short(self, price):
         logger.debug('schedule manager received SHORT event: {}'.format(price), extra=self.logger_extra)
         self.distribution_positions.append(price)
+        self.ledger.add_short(price)
 
     def update_allocation_position_count(self):
         self.distribution_positions = list()
@@ -54,10 +57,6 @@ class ScheduleManager(object):
         self.distribution_position_count += self.distribution_position_count * self.position_mult
 
     def allocate(self, trend_price, curr_price):
-        #
-        # if not self.profit_position:
-        #     self.profit_position = curr_price
-
         if not self.profit_position or curr_price < self.profit_position:
             self.update_allocation_position_count()
             if trend_price not in self.allocations:
@@ -83,10 +82,6 @@ class ScheduleManager(object):
                          extra=self.logger_extra)
 
     def distribute(self, trend_price, curr_price):
-        #
-        # if not self.profit_position:
-        #     self.profit_position = curr_price
-
         if not self.profit_position or curr_price > self.profit_position:
             self.update_distribution_position_count()
             if trend_price not in self.distributions:

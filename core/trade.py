@@ -6,7 +6,7 @@ logger = logging.getLogger(__name__)
 
 
 class TradeManager(object):
-    def __init__(self, base, coin, symbol, exchange_id, exchange, position_size, paper=False):
+    def __init__(self, base, coin, symbol, exchange_id, position_size, paper=False):
         """
         Tracks a specific Long or Short trade. Executes trades under optimal conditions, such as a retracement.
         Only one trade is tracked. If subsequent trades are added, they will be merged into the active trade.
@@ -17,7 +17,6 @@ class TradeManager(object):
         :param coin: symbol for market currency (e.g. BTC)
         :param symbol: coin/base pair
         :param exchange_id: the identifier of the exchange
-        :param exchange: core.exchangelimiter object for the exchange we want to trade
         :param position_size: how large is one position (in base currency)? (e.g. 0.001 BASE)
         :param paper: true means we don't really trade, only on paper
         """
@@ -29,7 +28,6 @@ class TradeManager(object):
 
         self.base = base
         self.coin = coin
-        self.exchange = exchange
         self.position_size = position_size
         self.paper = paper
 
@@ -49,7 +47,6 @@ class TradeManager(object):
         long = Long(
             symbol=self.symbol,
             exchange_id=self.exchange_id,
-            exchange=self.exchange,
             base=self.base,
             coin=self.coin,
             position_size=self.position_size,
@@ -70,7 +67,6 @@ class TradeManager(object):
         short = Short(
             symbol=self.symbol,
             exchange_id=self.exchange_id,
-            exchange=self.exchange,
             base=self.base,
             coin=self.coin,
             position_size=self.position_size,
@@ -108,7 +104,7 @@ class TradeManager(object):
 
 class Trade(object):
 
-    def __init__(self, symbol, exchange_id, exchange, base, coin, position_size, paper, retrace_percent, price):
+    def __init__(self, symbol, exchange_id, base, coin, position_size, paper, retrace_percent, price):
         self.symbol = symbol
         self.exchange_id = exchange_id
         self.logger_extra = dict(symbol=self.symbol, exchange_id=self.exchange_id)
@@ -118,7 +114,6 @@ class Trade(object):
         self.base = base
         self.coin = coin
         self.paper = paper
-        self.exchange = exchange
         self.position_size = position_size
         self.retrace_percent = retrace_percent  # 0.2 == 20%
         self.executed = False
