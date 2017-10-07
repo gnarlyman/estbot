@@ -1,5 +1,5 @@
 [database]
-host = suse.local
+host = <host>
 port = 5432
 username = pgadmin
 password = postgres
@@ -8,6 +8,29 @@ db_name = estbot
 [coinigy]
 api_key = <api key>
 api_secret = <api secret>
+
+[balance:BTRX:BTC]
+supply = 1
+[balance:BTRX:ETH]
+supply = 20
+[balance:BTRX:LTC]
+supply = 100
+[balance:BTRX:XMR]
+supply = 10
+[balance:BTRX:USDT]
+supply = 4000
+
+[balance:PLNX:LTC]
+supply = 100
+[balance:PLNX:BTC]
+supply = 0.25
+
+[balance:BITF:XRP]
+supply = 10000
+[balance:BITF:NEO]
+supply = 50
+[balance:BITF:BTC]
+supply = 0.5
 
 [symbol:BTRX:BTC/USDT]
 monitor = 1
@@ -18,6 +41,7 @@ paper = True
 candle_period_seconds = 300
 trade_frequency = 10
 position_mult = 1
+start_at_epoch = 1507161600
 
 [symbol:BTRX:ETH/USDT]
 monitor = 1

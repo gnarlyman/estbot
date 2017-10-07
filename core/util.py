@@ -22,7 +22,8 @@ def get_trends_from_config(trend_config):
 
 def config_to_dict(confparser):
     parsed_config = dict(
-        symbols=dict()
+        symbols=dict(),
+        balances=dict()
     )
     for section in confparser.sections():
         if section.startswith('symbol:'):
@@ -44,6 +45,7 @@ def config_to_dict(confparser):
                     parsed_config['symbols'][symbol].update({
                         option: value
                     })
+
         elif section == 'database':
             parsed_config['database'] = dict(
                 host=confparser.get(section, 'host'),
@@ -52,10 +54,18 @@ def config_to_dict(confparser):
                 username=confparser.get(section, 'username'),
                 password=confparser.get(section, 'password')
             )
+
         elif section == 'coinigy':
             parsed_config['coinigy'] = dict(
                 api_key=confparser.get(section, 'api_key'),
                 api_secret=confparser.get(section, 'api_secret')
+            )
+
+        elif section.startswith('balance'):
+            _, exchange, coin = section.split(':')
+            parsed_config['balances'][coin] = dict(
+                exchange=exchange,
+                supply=confparser.get(section, 'supply')
             )
 
     return parsed_config

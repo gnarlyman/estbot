@@ -49,12 +49,16 @@ class BaseEngine(object):
 
         self.backfill = True
 
-    def get_trade_history(self, history_count):
+    def get_trade_history(self, start_at, stop_at):
         query = self.db_session.query(Trades)\
             .filter(Trades.symbol == self.symbol)\
             .filter(Trades.exchange == self.exchange_id)\
-            .order_by(Trades.time.desc())\
-            .limit(history_count)
+            .order_by(Trades.time.desc())
+
+        if start_at:
+            query = query.filter(Trades.time >= start_at)
+        if stop_at:
+            query = query.filter(Trades.time <= stop_at)
 
         for trade in reversed([i for i in query]):
             yield trade
@@ -70,14 +74,13 @@ class BaseEngine(object):
             sell_vol = trade.quantity
         return buy_vol, sell_vol
 
-    async def run(self, interval, history_count, pauses=0, stop_at=None, test=False):
+    async def run(self, interval, start_at, stop_at):
         """
         Main loop for candle generation and event handling
 
         :param interval: frequency to poll database
-        :param history_count: number of historical Price objects
-                to pull from the database
-        :param pauses: useful for stepping through a backfill,
+        :param start_at: datetime to start reading from DB at, optional
+        :param stop_at: datetime to stop reading from DB at, optional
         performing X loops before waiting for user input
         :return:
         """
@@ -85,40 +88,35 @@ class BaseEngine(object):
 
         logger.info('get trade history', extra=self.logger_extra)
 
-        counter = 0
-        for trade in self.get_trade_history(history_count):
+        for trade in self.get_trade_history(start_at, stop_at):
 
             buy_vol, sell_vol = self.get_volume(trade)
 
             self.candle.tick(timestamp=trade.time, price=trade.price, buy_vol=buy_vol, sell_vol=sell_vol)
-            counter += 1
-            if pauses:
-                if counter % pauses == 0:
-                    input('{} loops, press return to continue'.format(counter))
-            if stop_at:
-                if trade.time >= stop_at:
-                    return
 
         logger.info('completed trade history', extra=self.logger_extra)
+
+        if stop_at:
+            logger.debug('stop_at time reached, stopping', extra=self.logger_extra)
+            return
 
         # we're done backfilling
         self.backfill = False
 
-        if not test:
-            logger.info('monitoring', extra=self.logger_extra)
-            while True:
-                now = datetime.utcnow()
-                for trade in self.db_session.query(Trades) \
-                        .filter(Trades.symbol == self.symbol) \
-                        .filter(Trades.exchange == self.exchange_id) \
-                        .filter(Trades.created_at > now - timedelta(seconds=interval)) \
-                        .order_by(Trades.time):
+        logger.info('monitoring', extra=self.logger_extra)
+        while True:
+            now = datetime.utcnow()
+            for trade in self.db_session.query(Trades) \
+                    .filter(Trades.symbol == self.symbol) \
+                    .filter(Trades.exchange == self.exchange_id) \
+                    .filter(Trades.created_at > now - timedelta(seconds=interval)) \
+                    .order_by(Trades.time):
 
-                    buy_vol, sell_vol = self.get_volume(trade)
+                buy_vol, sell_vol = self.get_volume(trade)
 
-                    self.candle.tick(timestamp=trade.time, price=trade.price, buy_vol=buy_vol, sell_vol=sell_vol)
+                self.candle.tick(timestamp=trade.time, price=trade.price, buy_vol=buy_vol, sell_vol=sell_vol)
 
-                await asyncio.sleep(interval)
+            await asyncio.sleep(interval)
 
     def get_candle_manager(self):
         cm = core.candle.CandleManager(self.symbol, self.exchange_id, self.period_seconds)

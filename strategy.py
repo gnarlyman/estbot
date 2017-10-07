@@ -38,7 +38,8 @@ class StrategyA(engine.BaseEngine):
 
         logger.debug(
             "{time:%m-%d-%Y %H:%M:%S} CLOSE High: {high}, Low: {low}, "
-            "Open: {open}, Close: {close}, Buy Vol: {buy_vol}, Sell Vol: {sell_vol}, Profit Pos: {profit}".format(
+            "Open: {open}, Close: {close}, Buy Vol: {buy_vol}, Sell Vol: {sell_vol}, Vol: {vol} "
+            "Profit Pos: {profit}".format(
                 time=ts,
                 high=candle.high,
                 low=candle.low,
@@ -46,6 +47,7 @@ class StrategyA(engine.BaseEngine):
                 close=candle.close,
                 buy_vol=candle.total_buy_vol,
                 sell_vol=candle.total_sell_vol,
+                vol=candle.total_buy_vol+candle.total_sell_vol,
                 profit=self.schedule.profit_position
             ),
             extra=self.logger_strategy_extra

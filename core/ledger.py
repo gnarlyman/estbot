@@ -13,13 +13,11 @@ class LedgerManager(object):
         self.exchange_limit = exchange_limit
 
         self.logger_extra = dict(symbol=None, exchange_id=None)
-        logger.debug('ledger-manager init', extra=self.logger_extra)
 
         self.ledger_list = dict()
 
     async def run(self, interval):
         while True:
-            logger.debug('ledger tick', extra=self.logger_extra)
             for ledger in self.ledger_list.values():
                 ledger.tick()
             await asyncio.sleep(interval)
@@ -30,6 +28,7 @@ class LedgerManager(object):
         )
 
         ledger_name = '{}-{}'.format(symbol, exchange_id)
+
         if ledger_name not in self.ledger_list:
             logger.debug('created ledger {}'.format(ledger_name), extra=dict(symbol=symbol, exchange_id=exchange_id))
             self.ledger_list.update({
@@ -62,6 +61,17 @@ class Ledger(object):
 
         self.logger_extra = dict(symbol=self.symbol, exchange_id=self.exchange_id)
 
+        c, b = self.symbol.split('/')
+        self.coin = Coin.get(c, self.exchange_id)
+        self.base = Coin.get(b, self.exchange_id)
+
+        logger.info('ledger initialized: {}={} {}={}'.format(
+            self.coin.coin,
+            self.coin.supply,
+            self.base.coin,
+            self.base.supply
+        ), extra=self.logger_extra)
+
     def tick(self):
         pass
 
@@ -70,3 +80,34 @@ class Ledger(object):
 
     def add_short(self, price):
         logger.debug('ledger short added {}'.format(price), extra=self.logger_extra)
+
+
+class Coin(object):
+
+    __coins__ = dict()
+
+    def __init__(self, coin, exchange_id, supply):
+        self.coin = coin
+        self.exchange_id = exchange_id
+        self.supply = supply
+
+        self.logger_extra = dict(symbol=self.coin, exchange_id=self.exchange_id)
+
+        logger.info('coin initialied at {}'.format(self.supply), extra=self.logger_extra)
+
+    @staticmethod
+    def create(coin, exchange_id, supply):
+        coin_id = '{}:{}'.format(coin, exchange_id)
+        if coin_id in Coin.__coins__:
+            raise Exception('coin {} already exists'.format(coin_id))
+
+        Coin.__coins__.update({
+            coin_id: Coin(coin, exchange_id, supply)
+        })
+
+        return Coin.__coins__[coin_id]
+
+    @staticmethod
+    def get(coin, exchange_id):
+        coin_id = '{}:{}'.format(coin, exchange_id)
+        return Coin.__coins__[coin_id]

@@ -34,13 +34,13 @@ class ScheduleManager(object):
         if len(positions):
             self.profit_position = sum(positions)/len(positions)
 
-    def event_long(self, price):
-        logger.debug('schedule manager received LONG event: {}'.format(price), extra=self.logger_extra)
+    def event_long(self, price, position_size):
+        logger.debug('schedule manager received LONG event: {} at {}'.format(position_size, price), extra=self.logger_extra)
         self.allocation_positions.append(price)
         self.ledger.add_long(price)
 
-    def event_short(self, price):
-        logger.debug('schedule manager received SHORT event: {}'.format(price), extra=self.logger_extra)
+    def event_short(self, price, position_size):
+        logger.debug('schedule manager received SHORT event: {} at {}'.format(position_size, price), extra=self.logger_extra)
         self.distribution_positions.append(price)
         self.ledger.add_short(price)
 

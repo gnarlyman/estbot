@@ -139,7 +139,7 @@ class Trade(object):
         logger.info('executing trade {}: Orig: {}, Low: {}, High: {}, Current: {} -- Size: {}'.format(
             self, self.orig, self.low, self.high, self.current, self.position_size
         ), extra=self.logger_extra)
-        self.trigger('execute_{}'.format(self.type), self.current)
+        self.trigger('execute_{}'.format(self.type), self.current, self.position_size)
 
     def eval_price(self):
         raise NotImplementedError()
@@ -147,9 +147,9 @@ class Trade(object):
     def __add__(self, other):
         self.position_size += other.position_size
 
-    def trigger(self, event, price):
+    def trigger(self, event, price, position_size):
         if event in self.callbacks:
-            self.callbacks[event](price)
+            self.callbacks[event](price, position_size)
 
     def register(self, event, callback):
         self.callbacks.setdefault(event, callback)

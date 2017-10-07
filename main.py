@@ -21,6 +21,10 @@ async def main():
     api_key = config['coinigy']['api_key']
     api_secret = config['coinigy']['api_secret']
 
+    print(config['balances'])
+    for coin, options in config['balances'].items():
+        core.ledger.Coin.create(coin, options['exchange'], options['supply'])
+
     with core.ledger.LedgerManager(api_key, api_secret) as ledger_manager:
         engines = list()
         engines.append(ledger_manager.run(interval=60))
@@ -30,10 +34,21 @@ async def main():
                 logger.info('start trading', extra=dict(symbol=symbol, exchange_id=options['exchange']))
                 ledger = ledger_manager.get_or_create(symbol, options['exchange'])
                 eng = strategy.StrategyA(db_session, ledger, symbol, options['exchange'], config)
+
+                start_at_epoch = options.get('start_at_epoch')
+                stop_at_epoch = options.get('stop_at_epoch')
+
+                start_at = None
+                stop_at = None
+                if start_at_epoch:
+                    start_at = datetime.utcfromtimestamp(float(start_at_epoch))
+                if stop_at_epoch:
+                    stop_at = datetime.utcfromtimestamp(float(stop_at_epoch))
+
                 engines.append(eng.run(
                     interval=1,
-                    history_count=50000,
-                    #stop_at=datetime.strptime("Wed Sep 13 07:05:00 2017", "%a %b %d %H:%M:%S %Y")
+                    start_at=start_at,
+                    stop_at=stop_at
                 ))
 
         await asyncio.gather(*engines)
